@@ -3,7 +3,7 @@
 ;TDA Date
 ;Constructor TDA Date
 ;Dom: Dia <number> X mes <number> X año <number>
-;Rec: TDA Date
+;Rec:Date
 (define date(lambda(dd mm yyyy)(
                                 cond [(date? dd mm yyyy)(list dd mm yyyy)]
                                       [else '()]                            
@@ -26,12 +26,18 @@
 ;Dom: String
 ;Rec: String
 (define encryptFn (lambda (s) (list->string (reverse (string->list s)))))
+(define decryptFn (lambda (s) (list->string (reverse (string->list s)))))
 
 ;TDA SocialNetwork
+;(name,date,encryptFn,decryptFn, users, posts)
 ;Constructor
 ;Dom:String X Date X EncryptFunction X DecryptFunction
-;Rec:TDA SocialNetwork
+;Rec:SocialNetwork
 
-(define socialnetwork (lambda(name date encryptFunction decryptFunction)
-  (list name date encryptFunction decryptFunction )
-  )) 
+(define socialnetwork(lambda(name date encryptFn decryptFn)
+                       (list name date encryptFn decryptFn '() '() )
+
+                       ))
+
+
+

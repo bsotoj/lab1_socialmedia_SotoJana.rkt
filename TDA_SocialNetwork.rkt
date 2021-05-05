@@ -45,5 +45,24 @@
 (define snUsers (lambda(s)(car(cddddr s))))
 (define snPosts (lambda(s)(car (cdr(cddddr s)))))
 
+;TDA Usuario
+;(idUser,username,pass,amigos)
+;donde amigos= (idUser1,idUser2,....,udUserN)
+
+;constructor
+;Dom: number X string X string X amigos
+;Rec: user
+(define user(lambda(lastUserID username pass amigos)
+              (list lastUserID username pass amigos)
+
+
+;modificadores
+
+(define addUser(lambda users newUserName pass)
+
+
+  )
+
+
 
 

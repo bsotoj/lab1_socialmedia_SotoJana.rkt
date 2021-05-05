@@ -39,11 +39,5 @@
 
                        ))
 
-;Selectores
-(define snName car)
-(define snDate cadr)
-(define snUsers (lambda(s)(car(cddddr s))))
-(define snPosts (lambda(s)(car (cdr(cddddr s)))))
-
 
 

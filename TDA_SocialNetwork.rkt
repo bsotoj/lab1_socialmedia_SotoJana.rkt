@@ -52,16 +52,19 @@
 ;constructor
 ;Dom: number X string X string X amigos
 ;Rec: user
-(define user(lambda(lastUserID username pass amigos)
-              (list lastUserID username pass amigos)
+(define user(lambda(userID username pass amigos) 
+              (list userID username pass amigos #f)))
+
+;selectores
+(define userID car)
+(define username cadr)
+(define pass caddr)
+(define amigos cadddr)
+(define sesionActiva (lambda(sN)(car(cddddr sN))))
+ 
 
 
-;modificadores
 
-(define addUser(lambda users newUserName pass)
-
-
-  )
 
 
 

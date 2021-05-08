@@ -70,10 +70,13 @@
   )
 
 ;Selectores
-;(define snName car)
-;(define snDate cadr)
-;(define snUsers (lambda(s)(car(cddddr s))))
-;(define snPosts (lambda(s)(car (cdr(cddddr s)))))
+(define get_snName car)
+(define get_snDate cadr)
+(define get_encryptFn caddr)
+(define get_decryptFn cadddr)
+(define get_snUsuarios (lambda(sn)(car(cdr(cdr(cdr(cdr sn)))))))
+(define get_snPublicaciones(lambda(sn)(car(cdr(cdr(cdr(cdr(cdr sn))))))))
+
 
 #|
 ;TDA user

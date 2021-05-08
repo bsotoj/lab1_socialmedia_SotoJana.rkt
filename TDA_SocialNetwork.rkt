@@ -49,7 +49,7 @@
 
 
 ;TDA SocialNetwork
-;(name, date, usuarios, publicaciones EncryptFn DecryptFn)
+;(name, date, encryptFn decryptFn,usuarios, publicaciones)
 
 
 ;Constructor
@@ -57,10 +57,11 @@
 ;Rec: SocialNetwork
 
 (define socialnetwork(lambda(name date encryptFn decryptFn)
-                       (if(and(es_Name? name)(date? date))
-
-                          (list -1)
+                       (if(es_Name? name) (list name date encryptFn encryptFn '() '())
+                          '()
                           )
+                       )
+  )
 ;Pertenencia
 (define es_Name?(lambda(name)
                   (if (string? name) #t
@@ -69,11 +70,12 @@
   )
 
 ;Selectores
-(define snName car)
-(define snDate cadr)
-(define snUsers (lambda(s)(car(cddddr s))))
-(define snPosts (lambda(s)(car (cdr(cddddr s)))))
+;(define snName car)
+;(define snDate cadr)
+;(define snUsers (lambda(s)(car(cddddr s))))
+;(define snPosts (lambda(s)(car (cdr(cddddr s)))))
 
+#|
 ;TDA user
 ;(idUser,username,pass,amigos)
 ;donde amigos= (idUser1,idUser2,....,udUserN)
@@ -107,65 +109,5 @@
 (define lastUserSA(lambda(users)(sesionActiva(lastUser users))))
 
   
-
-;; (id,dasd,asdasd,asd) (id,asdasd,asdasd,asdasd)
-
-;userID(firstUser(reverse users))
-#| 
-// constructor TDA usuario
-(define create-user
-    (lambda (nombre contraseña lastUserId)
-        (list nombre contraseña (+ 1 lastUserId)))
-
-// (u1, u2, u3, u99)
-    reverse (users)
-        car (cdr users)
-
-// if list is empty:
-    id = 1
-   else:
-    id = lastId + 1
-   return id
-
-
-|#
-
-
-
-#|
-(define printVariables(lambda(user . labels)
-                         (if(null? labels)"post dirigido al mismo usuario"
-                            labels
-                            )
-
-                         )
-   )
-;usuario(id,user,pass,bool); donde bool: sesion activa
-;selector
-(define getUserId car)
-(define getUserName cadr)
-(define getUserPass caddr)
-;Amigo (idUsuario x nombreAmigo1 nombreAmigo2)
-(define amigos (list (list 1 "u1" "u2") (list 2 "u3" "u4") (list 3 "u5" "u6")))
-(define buscar_por_ID (lambda(lista_amigos id_a_buscar)
-                        (if (eqv? id_a_buscar (getUserId(car lista_amigos)))
-                            (cdr (car lista_amigos))
-                            (buscar_por_ID (cdr lista_amigos) id_a_buscar))
-
-                        )
-
-  )
-(define printVariables(lambda(user . labels)
-                         (if(null? labels)"post dirigido al mismo usuario"
-                            labels
-                            )
-
-                         )
-   )
-(define date(lambda(dd mm yyyy)
-              (if(date? (list dd mm yyyy)) (list dd mm yyyy)
-                 '()
-                 )
- ))           
 
 |#

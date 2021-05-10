@@ -6,36 +6,31 @@
 ;Recursion:
 
 ;TDA Date
+;date(dia,mes,año)
 
-
-;Constructor
-;Descr: Funcion que permite crear una fecha
-;Dom: Dia <number> X mes <number> X año <number>
-;Rec: Date
+;constructor
+;Descr: Funcion que genera una fecha
+;Dom: Dia <int> X mes <int> X año <int>
+;Rec: date
 ;Recursion: NA
-(define date(lambda(dd mm yyyy)
-              (if(date? (list dd mm yyyy)) (list dd mm yyyy)
-                 '()
-                 )
- ))           
+(define date(lambda (dd mm yyyy) (list dd mm yyyy)))
 
 ;Pertenencia
 ;Descr: Funcion que verifica si los argumentos cumplen el formato fecha
-;Dom: Dia <number> X mes <number> X año <number>
+;Dom: date
 ;Rec: Bool
 ;Recursion: NA
 (define date? (lambda(fecha)
-                (if(and(number? (getDay fecha))(number? (getMonth fecha))(number? (getYear fecha)))
-                   #t
-                   #f
-                   )
-                ))
-  
+              (if(and(number? (getDay fecha))(getMonth fecha)(getYear fecha))
+                 #t
+                 #f
+                 )))
 
 ;Selectores
 (define getDay car)
 (define getMonth cadr)
 (define getYear caddr)
+
 
 
 
@@ -57,17 +52,56 @@
 ;Rec: SocialNetwork
 
 (define socialnetwork(lambda(name date encryptFn decryptFn)
-                       (if(es_Name? name) (list name date encryptFn encryptFn '() '())
+                       (if(and(esString? name)(date? date)(funcion? encryptFn)(funcion? decryptFn))
+                          (list name date encryptFn decryptFn '() '())
                           '()
                           )
                        )
   )
+
 ;Pertenencia
-(define es_Name?(lambda(name)
-                  (if (string? name) #t
+(define esString?(lambda(palabra)
+                  (if (string? palabra) #t
                       #f)
                   )
   )
+
+(define funcion? (lambda (funcion)
+                   (if (procedure? funcion) #t
+                       #f
+                       )
+                   )
+  )
+
+(define esNumero?(lambda(numero)
+                  (if (number? numero) #t
+                      #f)
+                  )
+  )
+
+(define esRedSocial? (lambda(socialN)
+                       (if(and
+                           (esString? (get_snName socialN))
+                           (date? (get_snDate socialN))
+                           (funcion? (get_encryptFn socialN))
+                           (funcion? (get_decryptFn socialN))
+                           (son_UsuariosValidos? (get_snUsuarios socialN))
+                           (sonPublicaciones? (get_snPublicaciones socialN))
+                           ) #t
+                             #f)
+ 
+                       )
+
+  )
+
+(define sonPublicaciones? (lambda (x)#t))
+;sonusuarios?
+     ;esusuario?
+;sonpublicaciones?
+     ;espublicacion?
+
+;LINEA 126 METER TODO EL IF EN UNA FUNCION DE PERTENENCIA 
+;(DEFINE ESREDSOCIAL?)
 
 ;Selectores
 (define get_snName car)
@@ -78,39 +112,74 @@
 (define get_snPublicaciones(lambda(sn)(car(cdr(cdr(cdr(cdr(cdr sn))))))))
 
 
-#|
+
 ;TDA user
-;(idUser,username,pass,amigos)
-;donde amigos= (idUser1,idUser2,....,udUserN)
+;user(sesionActiva,idUser,username,password,date,amigos,publicaciones_que_participa)
+;donde amigos = (user1,user2,....,userN)
+;publicaciones_que_participa= (idPublicacion1,idPublicacion2,......,idPublicacionN)
 
 ;constructor
-;Dom: number X string X string X amigos
-;Rec: user
-;bool representa sesionActiva donde #f: sesion no activa y #t: sesion activa
-;inicializa en #f
-(define primerUser(lambda(username pass)
-                       (list 0 username pass '() #f)))
+;
+;Descrip:funcion que crea un user
+;Dom: sesionActiva <bool> X userID <number> X username <string> X password <string> X date
+;Rec:user
+;Recursion: NA
+(define user(lambda(sesionActiva userID username password date)
+              (if (and (boolean? sesionActiva)(esNumero? userID) (esString? username) (esString? password) (date? date)) 
+                  (list sesionActiva userID username password date '() '())
+                  '()
+                  )
+              )
+ 
+  )
+;pertenencia
+;sonusuarios?
+     ;esusuario?
+(define es_UserValido? (lambda(usuario)
+                  (if
+                    (and(boolean? (getUser_sesionActiva usuario))
+                        (esNumero? (getUser_idUser usuario))
+                        (esString?(getUser_username usuario))
+                        (esString? (getUser_password usuario))
+                        (date? (getUser_date usuario))) #t
+                         #f)))
+                   
 
-(define user(lambda(userID username pass amigos) 
-              (list userID username pass amigos #f)))
+(define son_UsuariosValidos?(lambda(lista_usuarios)
+                              (if (null? lista_usuarios)#t
+                                  (and (es_UserValido? (car lista_usuarios)) (son_UsuariosValidos? (cdr lista_usuarios)))
 
+                                  )))
+
+;modificadores
 
 ;selectores
-(define userID car)
-(define username cadr)
-(define pass caddr)
-(define amigos cadddr)
-(define sesionActiva (lambda(sN)(car(cddddr sN))))
+(define getUser_sesionActiva car)
+(define getUser_idUser cadr)
+(define getUser_username caddr)
+(define getUser_password cadddr)
+(define getUser_date (lambda(usuario)
+                    (car(cdr(cdr(cdr(cdr usuario)))))
+                    ))
+
+(define getUser_amigos (lambda(usuario)
+                    (car(cdr(cdr(cdr(cdr (cdr usuario)))))
+                    )))
+
+;user(sesionActiva,idUser,username,password,date,amigos,publicaciones_que_participa)
+(define getUser_publicaciones (lambda(usuario)
+                    (car(cdr(cdr(cdr(cdr (cdr(cdr usuario)))))))
+                    ))
 
 
-;TDA Users
-;user1 X user2 X....X userN
-;selectores
-(define firstUser car)
-(define lastUser(lambda(users)(firstUser(reverse users))))
-(define lastUserID(lambda(users)(userID(firstUser(reverse users)))))
-(define lastUserSA(lambda(users)(sesionActiva(lastUser users))))
+;TDA USERS?
+(define getUser_lastUser(lambda(usuario)
+                          (car(reverse usuario))
+                          )
+  )
+(define getUser_lastID (lambda(usuario)
+                         (getUser_idUser(getUser_lastUser usuario ))
+                         )
+  )
 
-  
 
-|#

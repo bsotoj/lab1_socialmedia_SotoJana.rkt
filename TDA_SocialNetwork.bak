@@ -97,7 +97,6 @@
 (define sonPublicaciones? (lambda (x)#t))
 ;sonusuarios?
      ;esusuario?
-
 ;sonpublicaciones?
      ;espublicacion?
 
@@ -112,7 +111,7 @@
 (define get_snUsuarios (lambda(sn)(car(cdr(cdr(cdr(cdr sn)))))))
 (define get_snPublicaciones(lambda(sn)(car(cdr(cdr(cdr(cdr(cdr sn))))))))
 
-;-------------------------------------------------------------------------
+
 
 ;TDA user
 ;user(sesionActiva,idUser,username,password,date,amigos,publicaciones_que_participa)
@@ -125,17 +124,7 @@
 ;Dom: sesionActiva <bool> X userID <number> X username <string> X password <string> X date
 ;Rec:user
 ;Recursion: NA
-
-(define user(lambda(sesionActiva userID username password date amigos publicaciones_que_participa)
-              (if (and (boolean? sesionActiva)(esNumero? userID) (esString? username) (esString? password) (date? date)) 
-                  (list sesionActiva userID username password date '() '())
-                  '()
-                  )
-              )
- 
-  )
-
-(define user_inicializado(lambda(sesionActiva userID username password date)
+(define user(lambda(sesionActiva userID username password date)
               (if (and (boolean? sesionActiva)(esNumero? userID) (esString? username) (esString? password) (date? date)) 
                   (list sesionActiva userID username password date '() '())
                   '()
@@ -144,6 +133,8 @@
  
   )
 ;pertenencia
+;sonusuarios?
+     ;esusuario?
 (define es_UserValido? (lambda(usuario)
                   (if
                     (and(boolean? (getUser_sesionActiva usuario))
@@ -160,38 +151,8 @@
 
                                   )))
 
-(define son_AmigosValidos? (lambda(lista_amigos)
-                             (if (null? lista_amigos)#t
-                                 (and (esString? (car lista_amigos)) (son_AmigosValidos? (cdr lista_amigos)))
-                                 )
-                             )
-  )
-
-(define publicaciones_que_participa_Validas?(lambda (lista_PParticipa)
-                                              (if (null? lista_PParticipa)#t
-                                                  (and (esNumero? (car lista_PParticipa))
-                                                       (publicaciones_que_participa_Validas? (cdr lista_PParticipa)))
-                                                  )
-                                              )
-  )
-                                              
-  
-
 ;modificadores
-(define set_sesionActiva_True (lambda(usuario)
-                           (if(es_UserValido? usuario)
-                              (user #t
-                                    (getUser_idUser usuario)
-                                    (getUser_username)
-                                    getUser_password cadddr)
-                                    getUser_date
-                           )
-  ))
-#|(define set_sesionActiva_False (lambda(usuario)
-                           (if(es_UserValido? usuario)
-                              (user sesionActiva userID username password date)
-                           )
-  ))|#
+
 ;selectores
 (define getUser_sesionActiva car)
 (define getUser_idUser cadr)
@@ -205,22 +166,20 @@
                     (car(cdr(cdr(cdr(cdr (cdr usuario)))))
                     )))
 
-
+;user(sesionActiva,idUser,username,password,date,amigos,publicaciones_que_participa)
 (define getUser_publicaciones (lambda(usuario)
                     (car(cdr(cdr(cdr(cdr (cdr(cdr usuario)))))))
                     ))
 
 
-
-(define getUsers_lastUser(lambda(usuario)
+;TDA USERS?
+(define getUser_lastUser(lambda(usuario)
                           (car(reverse usuario))
                           )
   )
-
-(define getUsers_lastID (lambda(usuario)
-                         (getUser_idUser(getUsers_lastUser usuario ))
+(define getUser_lastID (lambda(usuario)
+                         (getUser_idUser(getUser_lastUser usuario ))
                          )
   )
-
 
 

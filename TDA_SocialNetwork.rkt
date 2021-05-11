@@ -94,15 +94,14 @@
 
   )
 
-(define sonPublicaciones? (lambda (x)#t))
-;sonusuarios?
-     ;esusuario?
+(define son_UsuariosValidos?(lambda(lista_usuarios)
+                              (if (null? lista_usuarios)#t
+                                  (and (es_UserValido? (car lista_usuarios)) (son_UsuariosValidos? (cdr lista_usuarios)))
 
-;sonpublicaciones?
-     ;espublicacion?
+                                  )))
 
-;LINEA 126 METER TODO EL IF EN UNA FUNCION DE PERTENENCIA 
-;(DEFINE ESREDSOCIAL?)
+(define sonPublicaciones? (lambda (x)#t)); pendiente
+
 
 ;Selectores
 (define get_snName car)
@@ -112,7 +111,41 @@
 (define get_snUsuarios (lambda(sn)(car(cdr(cdr(cdr(cdr sn)))))))
 (define get_snPublicaciones(lambda(sn)(car(cdr(cdr(cdr(cdr(cdr sn))))))))
 
-;-------------------------------------------------------------------------
+;otras funciones
+
+
+;descr:funcion que agrega un elemento en la cabeza de la lista
+;dom: list x number/string/list
+;rec: list
+;recursion: NA
+;referencia: funcion vista en clase del profesor Gonzalo Martinez
+
+(define agregar_cabeza
+  (lambda (lista elemento)
+    (cons elemento lista)))
+
+;descr:funcion que agrega un elemento en la cola de la lista
+;dom: list x number/string/list
+;rec: list
+;recursion: NA
+;referencia: funcion vista en clase del profesor Gonzalo Martinez
+
+(define agregar_cola
+  (lambda (lista elemento)
+    (reverse (cons elemento (reverse lista)))))
+
+;descr: funcion que permite hacer un filtrado a partir de un predicado
+;dom: predicado X list
+;rec: list
+;;Referencia: funcion vista en clase del profesor Gonzalo Martinez
+
+(define (my-filter pred lst)
+  (cond
+    [(empty? lst) '()] ;null? null
+    [(pred (car lst))  ;; si predicado es verdero, ejecuto la siguiente linea, caso contrario, ejecuto else
+     (cons (car lst) (my-filter pred (cdr lst)))]
+    [else (my-filter pred (cdr lst))]))
+;----------------------------------------------------------------------------
 
 ;TDA user
 ;user(sesionActiva,idUser,username,password,date,amigos,publicaciones_que_participa)
@@ -127,8 +160,14 @@
 ;Recursion: NA
 
 (define user(lambda(sesionActiva userID username password date amigos publicaciones_que_participa)
-              (if (and (boolean? sesionActiva)(esNumero? userID) (esString? username) (esString? password) (date? date)) 
-                  (list sesionActiva userID username password date '() '())
+              (if (and (boolean? sesionActiva)
+                       (esNumero? userID)
+                       (esString? username)
+                       (esString? password)
+                       (date? date)
+                       (son_AmigosValidos? amigos)
+                       (publicaciones_que_participa_Validas? publicaciones_que_participa) ) 
+                       (list sesionActiva userID username password date amigos publicaciones_que_participa)
                   '()
                   )
               )
@@ -137,12 +176,13 @@
 
 (define user_inicializado(lambda(sesionActiva userID username password date)
               (if (and (boolean? sesionActiva)(esNumero? userID) (esString? username) (esString? password) (date? date)) 
-                  (list sesionActiva userID username password date '() '())
+                  (list #f userID username password date '() '())
                   '()
                   )
               )
  
   )
+
 ;pertenencia
 (define es_UserValido? (lambda(usuario)
                   (if
@@ -154,11 +194,6 @@
                          #f)))
                    
 
-(define son_UsuariosValidos?(lambda(lista_usuarios)
-                              (if (null? lista_usuarios)#t
-                                  (and (es_UserValido? (car lista_usuarios)) (son_UsuariosValidos? (cdr lista_usuarios)))
-
-                                  )))
 
 (define son_AmigosValidos? (lambda(lista_amigos)
                              (if (null? lista_amigos)#t
@@ -178,20 +213,48 @@
   
 
 ;modificadores
-(define set_sesionActiva_True (lambda(usuario)
-                           (if(es_UserValido? usuario)
-                              (user #t
-                                    (getUser_idUser usuario)
-                                    (getUser_username)
-                                    getUser_password cadddr)
-                                    getUser_date
-                           )
+(define set_sesionActiva_True (lambda(idUsuario lista_usuarios)
+                                (if (eqv? idUsuario (getUser_idUser(car lista_usuarios)))
+                                    ;caso base
+                                    (cons (user
+                                           #t
+                                           idUsuario
+                                          (getUser_username(car lista_usuarios))
+                                          (getUser_password(car lista_usuarios))
+                                          (getUser_date(car lista_usuarios))
+                                          (getUser_amigos(car lista_usuarios))
+                                          (getUser_publicaciones(car lista_usuarios))
+                                          )
+                                          (cdr lista_usuarios))
+                                    ;caso recursivo
+                                    (cons (car lista_usuarios)(set_sesionActiva_True idUsuario (cdr lista_usuarios)))
+                                    
+                                )
+                                
   ))
-#|(define set_sesionActiva_False (lambda(usuario)
-                           (if(es_UserValido? usuario)
-                              (user sesionActiva userID username password date)
-                           )
-  ))|#
+       
+(define set_sesionActiva_False (lambda(idUsuario lista_usuarios)
+                                (if (eqv? idUsuario (getUser_idUser(car lista_usuarios)))
+                                    ;caso base
+                                    (cons (user
+                                           #f
+                                           idUsuario
+                                          (getUser_username(car lista_usuarios))
+                                          (getUser_password(car lista_usuarios))
+                                          (getUser_date(car lista_usuarios))
+                                          (getUser_amigos(car lista_usuarios))
+                                          (getUser_publicaciones(car lista_usuarios))
+                                          )
+                                          (cdr lista_usuarios))
+                                    ;caso recursivo
+                                    (cons (car lista_usuarios)(set_sesionActiva_False idUsuario (cdr lista_usuarios)))
+                                    
+                                )
+                                
+  ))
+  
+                           
+
 ;selectores
 (define getUser_sesionActiva car)
 (define getUser_idUser cadr)

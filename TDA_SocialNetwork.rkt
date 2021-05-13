@@ -136,6 +136,18 @@
   (lambda (lista elemento)
     (reverse (cons elemento (reverse lista)))))
 
+;descr:funcion que agrega uno a uno los elementos de una lista a otra
+;dom: list x list
+;rec: list
+;recursion: natural
+(define agregar_uno_a_uno (lambda(lista lista_a_agregar)
+
+                            (if(empty? lista)
+                               lista_a_agregar
+                               (cons (car lista) (agregar_uno_a_uno (cdr lista) lista_a_agregar))
+                               )
+                            ))
+
 
 ;descr: funcion que permite hacer un filtrado a partir de un predicado
 ;dom: predicado X list
@@ -167,7 +179,7 @@
                        (esString? username)
                        (esString? password)
                        (date? date)
-                       (son_AmigosValidos? amigos)
+                       ;(son_AmigosValidos? amigos)
                         ) 
                        (list sesionActiva userID username password date amigos)
                   '()
@@ -176,9 +188,9 @@
  
   )
 
-(define user_inicializado(lambda(sesionActiva userID username password date)
-              (if (and (boolean? sesionActiva)(esNumero? userID) (esString? username) (esString? password) (date? date)) 
-                  (list #f userID username password date '() '() '())
+(define user_inicializado(lambda(username password date)
+              (if (and  (esString? username) (esString? password) (date? date)) 
+                  (list #f 0 username password date '())
                   '()
                   )
               )
@@ -294,15 +306,32 @@
 ;---------------------------------OTRAS FUNCIONES----------------------------
 (define agregar_amigo(lambda(nombreUsuario lista_usuarios lista_amigos)
                        (if(eqv? nombreUsuario (getUser_username (car lista_usuarios)))
-                          (cons (user (getUser_sesionActiva (car lista_usuarios))
-                                      (getUser_idUser (car lista_usuarios))
-                                      (getUser_password (car lista_usuarios))
-                                      (getUser_date (car lista_usuarios))
+                          (cons(user
+                                (getUser_sesionActiva (car lista_usuarios))
+                                (getUser_idUser (car lista_usuarios))
+                                (getUser_username(car lista_usuarios))
+                                (getUser_password(car lista_usuarios))
+                                (getUser_date(car lista_usuarios))
+                                (agregar_uno_a_uno (getUser_amigos (car lista_usuarios)) lista_amigos) 
+                                )
+                                (cdr lista_usuarios))
 
-                                      (agregar_cola (getUser_amigos (car lista_usuarios)) lista_amigos))
-                                      (cdr lista_usuarios))
-                          (cons (car lista_usuarios)(agregar_amigo nombreUsuario (cdr lista_usuarios) lista_amigos)
-                       ))))
+                          (cons (car lista_usuarios)(agregar_amigo nombreUsuario (cdr lista_usuarios) lista_amigos))
+                          )))
+
+
+
+(define usuario1(user_inicializado "user1" "pass1" (date 0 0 0) ))
+usuario1
+(define usuario2(user_inicializado "user2" "pass1" (date 0 0 0) ))
+usuario2
+
+(define usuarios (list usuario1 usuario2))
+usuarios
+;(set_sesionActiva_True "user1" usuarios)
+
+(agregar_amigo "user1"(agregar_amigo "user1" usuarios (list "user2" "user3")) (list "user4" "user5"))
+
 ;------------------------------------------------------------------------
 ;DEFINITIVA
 ;TDA PARTICIPACION POST

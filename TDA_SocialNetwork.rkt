@@ -59,6 +59,10 @@
                        )
   )
 
+(define socialnetworkActualizado (lambda(snName snDate fn1 fn2 users posts usersActivity)
+                                   (list snName snDate fn1 fn2 users posts usersActivity)
+  ))
+
 ;----------------------------------PERTENENCIA-----------------------
 (define esString?(lambda(palabra)
                   (if (string? palabra) #t
@@ -126,27 +130,17 @@
     (cons elemento lista)))
 
 
-;descr:funcion que agrega un elemento en la cola de la lista
-;dom: list x number/string/list
-;rec: list
-;recursion: NA
-;referencia: funcion vista en clase del profesor Gonzalo Martinez
-
-(define agregar_cola
-  (lambda (lista elemento)
-    (reverse (cons elemento (reverse lista)))))
-
-;descr:funcion que agrega uno a uno los elementos de una lista a otra
+;descr:funcion que agrega elementos a la cola de la lista
 ;dom: list x list
 ;rec: list
 ;recursion: natural
-(define agregar_uno_a_uno (lambda(lista lista_a_agregar)
-
+(define agregar_cola (lambda(lista lista_a_agregar)
                             (if(empty? lista)
                                lista_a_agregar
-                               (cons (car lista) (agregar_uno_a_uno (cdr lista) lista_a_agregar))
+                               (cons (car lista) (agregar_cola (cdr lista) lista_a_agregar))
                                )
                             ))
+
 
 
 ;descr: funcion que permite hacer un filtrado a partir de un predicado
@@ -165,7 +159,7 @@
 ;-----------------------------TDA USER-------------------------------------
 
 ;user(sesionActiva,idUser,username,password,date,amigos)
-;donde amigos = (user1,user2,....,userN)
+;donde amigos = (usernarme1,username2,....,usernameN)
 ;----------------------------------CONSTRUCTORES--------------------------------
 ;
 ;Descrip:funcion que crea un user
@@ -179,7 +173,7 @@
                        (esString? username)
                        (esString? password)
                        (date? date)
-                       ;(son_AmigosValidos? amigos)
+                       (listaAmigos_valida? amigos)
                         ) 
                        (list sesionActiva userID username password date amigos)
                   '()
@@ -188,14 +182,6 @@
  
   )
 
-(define user_inicializado(lambda(username password date)
-              (if (and  (esString? username) (esString? password) (date? date)) 
-                  (list #f 0 username password date '())
-                  '()
-                  )
-              )
- 
-  )
 
 ;-------------------------------------PERTENENCIA-----------------------------
 (define es_UserValido? (lambda(usuario)
@@ -204,17 +190,23 @@
                         (esNumero? (getUser_idUser usuario))
                         (esString?(getUser_username usuario))
                         (esString? (getUser_password usuario))
-                        (date? (getUser_date usuario))) #t
+                        (date? (getUser_date usuario))
+                        (listaAmigos_valida? (getUser_amigos usuario))) #t
                          #f)))
                    
 
 
-(define son_AmigosValidos? (lambda(lista_amigos)
-                             (if (null? lista_amigos)#t
-                                 (and (esString? (car lista_amigos)) (son_AmigosValidos? (cdr lista_amigos)))
+  
+(define listaAmigos_valida? (lambda (lista_amigos)
+                              (if(empty? lista_amigos)#t
+                                 (and(esString? (car lista_amigos))(listaAmigos_valida? (cdr lista_amigos)))
                                  )
-                             )
-  )
+                              ))
+ 
+(define existe-usuario? (lambda(nombreUsuarioAVerificar)
+                          (lambda(usuario)
+                            (eqv? nombreUsuarioAVerificar (getUser_username usuario)))))
+                          
 #|
 (define publicaciones_que_participa_Validas?(lambda (lista_PParticipa)
                                               (if (null? lista_PParticipa)#t
@@ -279,18 +271,18 @@
                     )))
 
 
-(define getUsers_lastUser(lambda(usuario)
-                          (car(reverse usuario))
+(define getUsers_lastUser(lambda(usuarios)
+                          (car(reverse usuarios))
                           )
   )
 
-(define getUsers_lastID (lambda(usuario)
-                         (getUser_idUser(getUsers_lastUser usuario ))
+(define getUsers_lastID (lambda(usuarios)
+                         (getUser_idUser(getUsers_lastUser usuarios ))
                          )
   )
 
 
-(define son_amigos? (lambda(amigo lista_amigos)
+#|(define son_amigos? (lambda(amigo lista_amigos)
                       (if (null? lista_amigos) #f
                           (or (eqv? amigo (car lista_amigos))(son_amigos? amigo (cdr lista_amigos)))
                           )
@@ -302,7 +294,7 @@
                        (if (null? personas)#t
                            (and (son_amigos? (car personas) amigos_usuario) (amigos_user? amigos_usuario (cdr personas)))
                            )
-                       ))
+                       ))|#
 ;---------------------------------OTRAS FUNCIONES----------------------------
 (define agregar_amigo(lambda(nombreUsuario lista_usuarios lista_amigos)
                        (if(eqv? nombreUsuario (getUser_username (car lista_usuarios)))
@@ -312,7 +304,7 @@
                                 (getUser_username(car lista_usuarios))
                                 (getUser_password(car lista_usuarios))
                                 (getUser_date(car lista_usuarios))
-                                (agregar_uno_a_uno (getUser_amigos (car lista_usuarios)) lista_amigos) 
+                                (agregar_cola (getUser_amigos (car lista_usuarios)) lista_amigos) 
                                 )
                                 (cdr lista_usuarios))
 
@@ -320,7 +312,7 @@
                           )))
 
 
-
+#|
 (define usuario1(user_inicializado "user1" "pass1" (date 0 0 0) ))
 usuario1
 (define usuario2(user_inicializado "user2" "pass1" (date 0 0 0) ))
@@ -331,12 +323,68 @@ usuarios
 ;(set_sesionActiva_True "user1" usuarios)
 
 (agregar_amigo "user1"(agregar_amigo "user1" usuarios (list "user2" "user3")) (list "user4" "user5"))
-
+|#
 ;------------------------------------------------------------------------
 ;DEFINITIVA
 ;TDA PARTICIPACION POST
+;donde R: valor actual que tienen las participaciones
 (define agregarNuevaParticipacion(lambda(usuarios idPost R)
                                    (if(empty? usuarios)R
                                       (agregarNuevaParticipacion (cdr usuarios) idPost (cons (list (car usuarios) idPost) R))
                                       )))
 
+;--------------------------FUNCIONES OBLIGATORIAS--------------------------------------
+
+;Descripcion: funcion que registra a un nuevo usuario en la red social
+;Dom: socialnetwork X date X string X string
+;Rec: socialnetwork
+;encabezado = (register socialnetwork date username password)
+
+
+(define register(lambda(socialnetwork date username password)
+                   (if(and(esRedSocial? socialnetwork) (date? date) (esString? username) (esString? password))
+                      (if(null? (my-filter (existe-usuario? username) (get_snUsuarios socialnetwork)))
+                         (if (null? (get_snUsuarios socialnetwork))
+                             ;primero usuario en registrarse
+                             (socialnetworkActualizado (get_snName socialnetwork)
+                                                   (get_snDate socialnetwork)
+                                                   (get_encryptFn socialnetwork)
+                                                   (get_decryptFn socialnetwork)
+                                                   (agregar_cola (get_snUsuarios socialnetwork)(list(user #f 0 username password date '())))
+                                                   (get_snPublicaciones socialnetwork)
+                                                   (get_snGente_que_participo_en_post socialnetwork))
+                             ;ya existe 1 o mas usuarios
+                             (socialnetworkActualizado (get_snName socialnetwork)
+                                                   (get_snDate socialnetwork)
+                                                   (get_encryptFn socialnetwork)
+                                                   (get_decryptFn socialnetwork)
+                                                   (agregar_cola (get_snUsuarios socialnetwork)
+                                                                 (list(user #f
+                                                                       (getUsers_lastID (get_snUsuarios socialnetwork))
+                                                                       username
+                                                                       password
+                                                                       date
+                                                                       '())))
+                                                   (get_snPublicaciones socialnetwork)
+                                                   (get_snGente_que_participo_en_post socialnetwork))
+                             
+
+
+                             )
+                       
+                         
+                         "este usuario ya existe"
+
+
+
+                         )
+                      "parametro(s) no valido(s)"
+                      )
+                    )
+
+  )
+;PRUEBA FUNCION REGISTER
+;(define emptyFB (socialnetwork "fb" (date 25 10 2021) encryptFn encryptFn))
+;(emptyFB)
+;(register (register (register emptyFB (date 25 10 2021) "user1" "pass1") (date 25 10 2021) "user2"
+;"pass2") (date 25 10 2021) "user3" "pass3")

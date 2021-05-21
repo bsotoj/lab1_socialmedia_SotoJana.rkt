@@ -136,13 +136,13 @@
 
 
 ;descr:funcion que agrega elementos a la cola de la lista
-;dom: list x list
+;dom: list x list/number/string
 ;rec: list
 ;recursion: natural
-(define agregar_cola (lambda(lista lista_a_agregar)
+(define agregar_cola (lambda(lista elemento)
                             (if(empty? lista)
-                               lista_a_agregar
-                               (cons (car lista) (agregar_cola (cdr lista) lista_a_agregar))
+                               elemento
+                               (cons (car lista) (agregar_cola (cdr lista) elemento))
                                )
                             ))
 
@@ -428,18 +428,33 @@
 ;------------------------------PERTENENCIA----------------------------------
 (define es_PublicacionValida? (lambda(publicacion)
                                 (and(esNumero? (getPost_id publicacion))
-                                    (date? (getPost_id publicacion))
-                                    (esString? (getPost_id publicacion))
-                                    (esString? (getPost_id publicacion))
-                                    (esString? (getPost_id publicacion))
-                                    (list? (getPost_id publicacion))
-                                    (comment? (getPost_id publicacion))
+                                    (date? (getPost_date publicacion))
+                                    (esString? (getPost_autor publicacion))
+                                    (esString? (getPost_tipoPublicacion publicacion))
+                                    (esString? (getPost_contenido publicacion))
+                                    (list? (getPost_reacciones publicacion))
+                                    (comment? (getPost_comments publicacion));PENDIENTE
                                  )
                                 ))
 ;------------------------------MODIFICADORES----------------------------------
 
 ;------------------------------OTRAS FUNCIONES----------------------------------
+(define agregar-nueva-reaccion(lambda(idPost lista_publicaciones user-que-reacciona)
+                                (if(eqv? idPost (getPost_id(car lista_publicaciones)))
+                                   (cons(publicacion idPost
+                                                     (getPost_date (car lista_publicaciones))
+                                                     (getPost_autor (car lista_publicaciones))
+                                                     (getPost_tipoPublicacion (car lista_publicaciones))
+                                                     (getPost_contenido (car lista_publicaciones))
+                                                     (agregar_cola (getPost_reacciones (car lista_publicaciones)) user-que-reacciona)
+                                                     (getPost_comments (car lista_publicaciones))
+                                         )
+                                    (cdr lista_publicaciones))
+                                   '()
+                                   )
+                                )
 
+  )
 
 ;---------------------------------------------------------------------------
 ;---------------------------------------------------------------------------
@@ -468,7 +483,46 @@ usuarios
                                    (if(empty? usuarios)R
                                       (agregarNuevaParticipacion (cdr usuarios) idPost (cons (list (car usuarios) idPost) R))
                                       )))
+;FUNCION ARREGLADA
+(define agregar_cabeza
+  (lambda (lista elemento)
+    (cons elemento lista)))
 
+(define agregar_cola (lambda(lista elemento)
+                            (if(empty? lista)
+                               elemento
+                               (cons (car lista) (agregar_cola (cdr lista) elemento))
+                               )
+                            ))
+
+
+(define noExistePostParticipado? (lambda(idPost lista-personas-que-participan-en-post)
+                                 (if(null? lista-personas-que-participan-en-post)#t
+                                    (if(eqv? idPost (car(car lista-personas-que-participan-en-post)))#f
+                                       (noExistePostParticipado? idPost  (cdr lista-personas-que-participan-en-post)
+                                    )
+                                 ))))
+(define añadir-participante-por-idPost (lambda(idPost lista-personas participante)
+                                         (if(eqv? idPost (car(car lista-personas)))
+                                            (cons (agregar_cola (car lista-personas) participante) (cdr lista-personas))
+                                            (cons(car lista-personas) (añadir-participante-por-idPost idPost (cdr lista-personas) participante))
+                                         )))
+
+(define agregarNuevaParticipacion(lambda(idPost lista-participantes nuevos-participantes)
+                                   (if(null? lista-participantes)
+                                      (agregar_cabeza lista-participantes (agregar_cabeza nuevos-participantes idPost))
+                                      (if(noExistePostParticipado? idPost lista-participantes)
+                                      (agregar_cola lista-participantes (list(agregar_cabeza nuevos-participantes idPost))
+                                      
+                                      )
+                                      (añadir-participante-por-idPost idPost lista-participantes nuevos-participantes)
+                                      ))))
+
+(define usuarios (list "user1" "user2" "user3"))
+(define a (agregarNuevaParticipacion 4 '() usuarios))
+(define b(agregarNuevaParticipacion 5 a (list "user7" "user8" "user9")))
+(agregarNuevaParticipacion 5 b (list "user0" "userA" "userb"))
+salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA" "userb"))
 ;--------------------------FUNCIONES OBLIGATORIAS--------------------------------------
 
 #|

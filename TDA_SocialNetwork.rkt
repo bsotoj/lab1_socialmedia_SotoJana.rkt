@@ -104,7 +104,12 @@
 
                                   )))
 
-(define sonPublicaciones? (lambda (x)#t)); pendiente
+(define sonPublicaciones? (lambda (lista_publicaciones)
+                            (if(null? lista_publicaciones)#t
+                               (and (es_PublicacionValida? (car lista_publicaciones)) (es_PublicacionValida? (cdr lista_publicaciones)))
+                               )
+                            )
+  ); pendiente
 
 
 ;-------------------------------SELECTORES-------------------------------
@@ -155,7 +160,44 @@
      (cons (car lst) (my-filter pred (cdr lst)))]
     [else (my-filter pred (cdr lst))]))
 
+;; Descripción: Función que aplica una función fn a todos y cada uno de los elementos
+;;              de una lista lst
+;; Dom: Función a aplicar a una colección de datos <función>,
+;;      Lista de datos <lista>
+;; Rec: Nueva lista con cada elemento
+;; Tipo de recursión: Natural
+;; Referencia: funcion vista en clase del profesor Gonzalo Martinez
+(define (mi-map funcion lista)
+  (cond
+    [(null? lista) null]
+    [else (cons (funcion (car lista))
+                (mi-map funcion (cdr lista)))]))
 
+;Descripcion: Funcion que aplica el conector logico "and" a cada uno de los elementos de una lista
+;Dom: list
+;Rec: boolean
+;Recursion: natural
+
+(define mi-andmap(lambda(lista)
+              (if (null? lista) #t   
+             (and(car lista)(mi-andmap (cdr lista)))
+                   )
+  ))
+
+;Descripcion: Funcion que verifica si un item se encuentra en la lista
+;Dom: string/number X list
+;Rec: boolean
+;Recursion: NA
+;Referencia: funcion vista en clase del profesor Gonzalo Martinez
+(define member?
+  (lambda (item lst)
+    (cond
+      [(null? lst) #f]
+      [(equal? item (car lst)) #t]
+      [else (member? item (cdr lst))])))
+;--------------------------------------------------------------------------
+;--------------------------------------------------------------------------
+;--------------------------------------------------------------------------
 ;-----------------------------TDA USER-------------------------------------
 
 ;user(sesionActiva,idUser,username,password,date,amigos,followers)
@@ -209,7 +251,31 @@
 
 (define sesion-activa? (lambda (usuario)
                          (eqv? #t (getUser_sesionActiva usuario))
-                         ))                     
+                         ))
+
+(define son-amigos? (lambda(lista-amigos-usuario)
+                      (lambda(personaAVerificar)
+                      (member? personaAVerificar lista-amigos-usuario)
+                      )))
+
+#|ESTO ES LA CONDICION ANTES DE HACER UN POST
+->TIENE QUE HABER UN USER QUE SESION INICIADA
+->LAS PERSONAS TIENEN QUE ENCONTRARSE EN SU LISTA DE AMIGOS
+|#
+;asumiendo que se entrega como parametro de entrada la lista de personas a verificar si son amigos -> users
+;y que los amigos fueron agregados anteriormente
+(if(not(null? (getUser_sesionIniciada(get_snUsuario socialnetwork))))
+   (if(not(null? users)) ;significa que el post va a ir dirigido a usuarios
+      (if(mi-andmap(mi-map
+                    (son_amigos? (getUser_amigos(getUser_sesionIniciada(get_snUsuarios socialnetwork)))) users))
+         "son amigos y se puede ejecutar la funcion"
+         "las personas ingresadas no se encuentran en la lista de amigos del user actual-> retornar socialnetwork"
+         )
+      "el post va dirigido al mismo usuario"
+      )
+   ;si no se cumple la condicion, retorna el mismo social network
+   socialnetwork)
+
 #|
 (define publicaciones_que_participa_Validas?(lambda (lista_PParticipa)
                                               (if (null? lista_PParticipa)#t
@@ -289,21 +355,15 @@
                          )
   )
 
+(define getUser_sesionIniciada (lambda(usuarios)
+                                (if (null? usuarios) '()
+                               (if(eqv? #t (getUser_sesionActiva(car usuarios)))
+                                  (car usuarios)
+                                  (getUser_sesionIniciada (cdr usuarios))
+                               )
+                                )))
 
 
-#|(define son_amigos? (lambda(amigo lista_amigos)
-                      (if (null? lista_amigos) #f
-                          (or (eqv? amigo (car lista_amigos))(son_amigos? amigo (cdr lista_amigos)))
-                          )
-                      ))
-;(define friends (list "pepe" "carlos" "andres"))
-;(son_amigos? "carlos" lista_amigos)
-
-(define amigos_user? (lambda(amigos_usuario personas)
-                       (if (null? personas)#t
-                           (and (son_amigos? (car personas) amigos_usuario) (amigos_user? amigos_usuario (cdr personas)))
-                           )
-                       ))|#
 ;---------------------------------OTRAS FUNCIONES----------------------------
 (define agregar_amigo(lambda(nombreUsuario lista_usuarios lista_amigos)
                        (if(eqv? nombreUsuario (getUser_username (car lista_usuarios)))
@@ -319,8 +379,75 @@
 
                           (cons (car lista_usuarios)(agregar_amigo nombreUsuario (cdr lista_usuarios) lista_amigos))
                           )))
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;------------------------------TDA PUBLICACION------------------------------
+;publicacion(idPost,date,autorPost,tipoPublicacion,contenido,reacciones,comments)
+;donde contenido = mensaje encriptado
+;reacciones (username1,username2,...usernameN) -> usernamei = string
+
+;------------------------------CONSTRUCTOR----------------------------------
+;Descripcion: funcion que crea una publicacion
+;Dom: int X date X string X string X string X list X comment
+;Rec: publicacion
+;Recursion: NA
+
+(define iniciarPublicacion(lambda(idPost date autorPost tipoPublicacion contenido)
+                               (if(and(esNumero? idPost) (date? date) (esString? autorPost) (esString? tipoPublicacion) (esString? contenido))
+                                   (list idPost date autorPost tipoPublicacion contenido '() '())
+                                  '())
+                                )
+
+  )
+
+(define publicacion(lambda(idPost date autorPost tipoPublicacion contenido reacciones comments)
+                     (list idPost date autorPost tipoPublicacion contenido reacciones comments)
+                     ))
 
 
+;------------------------------SELECTORES----------------------------------
+(define getPost_id car)
+(define getPost_date cadr)
+(define getPost_autor caddr)
+(define getPost_tipoPublicacion cadddr)
+(define getPost_contenido (lambda(p)(car(cdr(cdr(cdr(cdr p)))))))
+(define getPost_reacciones(lambda(p)(car(cdr(cdr(cdr(cdr(cdr p))))))))
+(define getPost_comments (lambda(p)(car(cdr(cdr(cdr(cdr(cdr(cdr p)))))))))
+
+
+(define getPost_lastPost(lambda(publicaciones)
+                          (car(reverse publicaciones))
+                          )
+  )
+
+(define getPost_lastID (lambda(publicaciones)
+                         (getPost_id(getPost_lastPost publicaciones))
+                         )
+  )
+;------------------------------PERTENENCIA----------------------------------
+(define es_PublicacionValida? (lambda(publicacion)
+                                (and(esNumero? (getPost_id publicacion))
+                                    (date? (getPost_id publicacion))
+                                    (esString? (getPost_id publicacion))
+                                    (esString? (getPost_id publicacion))
+                                    (esString? (getPost_id publicacion))
+                                    (list? (getPost_id publicacion))
+                                    (comment? (getPost_id publicacion))
+                                 )
+                                ))
+;------------------------------MODIFICADORES----------------------------------
+
+;------------------------------OTRAS FUNCIONES----------------------------------
+
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;------------------------------TDA COMMENT----------------------------------
+;comment(idPost,date,contenido,((autorComentario1,date,contenido),(autorComentario2,date,contenido),....,(autorComentarioN,date,contenido))
+
+;---------------------------------------------------------------------------
 #|
 (define usuario1(user_inicializado "user1" "pass1" (date 0 0 0) ))
 usuario1
@@ -343,12 +470,31 @@ usuarios
                                       )))
 
 ;--------------------------FUNCIONES OBLIGATORIAS--------------------------------------
-;PRUEBAS FUNCIONES OBLIGATORIAS
+
+#|
+(define usuario1(user_inicializado "user1" "pass1" (date 0 0 0) ))
+usuario1
+(define usuario2(user_inicializado "user2" "pass1" (date 0 0 0) ))
+usuario2
+
+(define usuarios (list usuario1 usuario2))
+usuarios
+;(set_sesionActiva_True "user1" usuarios)
+
+(agregar_amigo "user1"(agregar_amigo "user1" usuarios (list "user2" "user3")) (list "user4" "user5"))
+|#
+
+
+;--------------------PRUEBAS FUNCIONES OBLIGATORIAS-------------------------------------
 ;(define emptyFB (socialnetwork "fb" (date 25 10 2021) encryptFn encryptFn))
 #|(define accionRegistrar(register (register (register emptyFB (date 25 10 2021) "user1" "pass1") (date 25 10 2021) "user2"
 "pass2") (date 25 10 2021) "user3" "pass3"))
 |#
+
 ;(login accionRegistrar "user2" "pass2" funcion)
+
+;(define accionLogin (login accionRegistrar "user2" "pass2" funcion))
+;(getUser_sesionIniciada(get_snUsuarios accionLogin))
 
 
 
@@ -424,4 +570,6 @@ usuarios
                     operation
                 )
                 "parametros no validos")))
+
 ;--------------------------POST----------------------------------------------------
+;(define funcion(lambda(sn)sn))

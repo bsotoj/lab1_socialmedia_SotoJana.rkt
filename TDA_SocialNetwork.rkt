@@ -203,9 +203,9 @@
                                  )
                               ))
  
-(define existe-usuario? (lambda(nombreUsuarioAVerificar)
+(define existe-usuario? (lambda(nombreUsuarioAVerificar contraseñaUsuario)
                           (lambda(usuario)
-                            (eqv? nombreUsuarioAVerificar (getUser_username usuario)))))
+                            (and(eqv? nombreUsuarioAVerificar (getUser_username usuario)) (eqv? contraseñaUsuario (getUser_password usuario))))))
                           
 #|
 (define publicaciones_que_participa_Validas?(lambda (lista_PParticipa)
@@ -334,7 +334,13 @@ usuarios
                                       )))
 
 ;--------------------------FUNCIONES OBLIGATORIAS--------------------------------------
-
+;PRUEBAS FUNCIONES OBLIGATORIAS
+;(define emptyFB (socialnetwork "fb" (date 25 10 2021) encryptFn encryptFn))
+#|(define accionRegistrar(register (register (register emptyFB (date 25 10 2021) "user1" "pass1") (date 25 10 2021) "user2"
+"pass2") (date 25 10 2021) "user3" "pass3"))
+|#
+;(login accionRegistrar "user2" "pass2" #t)
+;--------------------------REGISTER----------------------------------------------------
 ;Descripcion: funcion que registra a un nuevo usuario en la red social
 ;Dom: socialnetwork X date X string X string
 ;Rec: socialnetwork
@@ -343,7 +349,7 @@ usuarios
 
 (define register(lambda(socialnetwork date username password)
                    (if(and(esRedSocial? socialnetwork) (date? date) (esString? username) (esString? password))
-                      (if(null? (my-filter (existe-usuario? username) (get_snUsuarios socialnetwork)))
+                      (if(null? (my-filter (existe-usuario? username password) (get_snUsuarios socialnetwork)))
                          (if (null? (get_snUsuarios socialnetwork))
                              ;primero usuario en registrarse
                              (socialnetworkActualizado (get_snName socialnetwork)
@@ -360,7 +366,7 @@ usuarios
                                                    (get_decryptFn socialnetwork)
                                                    (agregar_cola (get_snUsuarios socialnetwork)
                                                                  (list(user #f
-                                                                       (getUsers_lastID (get_snUsuarios socialnetwork))
+                                                                       (+ 1 (getUsers_lastID (get_snUsuarios socialnetwork)))
                                                                        username
                                                                        password
                                                                        date
@@ -383,8 +389,26 @@ usuarios
                     )
 
   )
-;PRUEBA FUNCION REGISTER
-;(define emptyFB (socialnetwork "fb" (date 25 10 2021) encryptFn encryptFn))
-;(emptyFB)
-;(register (register (register emptyFB (date 25 10 2021) "user1" "pass1") (date 25 10 2021) "user2"
-;"pass2") (date 25 10 2021) "user3" "pass3")
+
+;--------------------------LOGIN----------------------------------------------------
+;Descripcion: Función que permite autenticar a un usuario registrado iniciar sesión
+;y junto con ello permite la ejecución de comandos concretos dentro de la red social.
+
+;Dom:socialnetwork X string X string X function
+;Rec:function
+;Encabezado = (login socialnetwork username password operation)
+
+(define login (lambda(socialnetwork username password operation)
+                (if (and (esRedSocial? socialnetwork) (esString? username) (esString? password) (funcion? operation))
+                    
+                (if (not(null? (my-filter (existe-usuario? username password) (get_snUsuarios socialnetwork))))
+                    (operation (socialnetworkActualizado (get_snName socialnetwork)
+                                                   (get_snDate socialnetwork)
+                                                   (get_encryptFn socialnetwork)
+                                                   (get_decryptFn socialnetwork)
+                                                   (set_sesionActiva_True username (get_snUsuarios socialnetwork))
+                                                   (get_snPublicaciones socialnetwork)
+                                                   (get_snGente_que_participo_en_post socialnetwork)))
+                    operation
+                )
+                "parametros no validos")))

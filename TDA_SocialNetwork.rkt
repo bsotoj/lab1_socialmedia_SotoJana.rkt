@@ -206,7 +206,10 @@
 (define existe-usuario? (lambda(nombreUsuarioAVerificar contraseñaUsuario)
                           (lambda(usuario)
                             (and(eqv? nombreUsuarioAVerificar (getUser_username usuario)) (eqv? contraseñaUsuario (getUser_password usuario))))))
-                          
+
+(define sesion-activa? (lambda (usuario)
+                         (eqv? #t (getUser_sesionActiva usuario))
+                         ))                     
 #|
 (define publicaciones_que_participa_Validas?(lambda (lista_PParticipa)
                                               (if (null? lista_PParticipa)#t
@@ -339,7 +342,10 @@ usuarios
 #|(define accionRegistrar(register (register (register emptyFB (date 25 10 2021) "user1" "pass1") (date 25 10 2021) "user2"
 "pass2") (date 25 10 2021) "user3" "pass3"))
 |#
-;(login accionRegistrar "user2" "pass2" #t)
+;(login accionRegistrar "user2" "pass2" funcion)
+
+
+
 ;--------------------------REGISTER----------------------------------------------------
 ;Descripcion: funcion que registra a un nuevo usuario en la red social
 ;Dom: socialnetwork X date X string X string

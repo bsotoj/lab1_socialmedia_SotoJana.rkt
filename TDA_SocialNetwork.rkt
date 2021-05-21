@@ -158,7 +158,7 @@
 
 ;-----------------------------TDA USER-------------------------------------
 
-;user(sesionActiva,idUser,username,password,date,amigos)
+;user(sesionActiva,idUser,username,password,date,amigos,followers)
 ;donde amigos = (usernarme1,username2,....,usernameN)
 ;----------------------------------CONSTRUCTORES--------------------------------
 ;
@@ -175,7 +175,7 @@
                        (date? date)
                        (listaAmigos_valida? amigos)
                         ) 
-                       (list sesionActiva userID username password date amigos)
+                       (list sesionActiva userID username password date amigos '())
                   '()
                   )
               )
@@ -273,6 +273,11 @@
                     (car(cdr(cdr(cdr(cdr (cdr usuario)))))
                     )))
 
+(define getUser_followers (lambda(usuario)
+                    (car(cdr(cdr(cdr(cdr(cdr (cdr usuario)))))
+                    ))))
+
+
 
 (define getUsers_lastUser(lambda(usuarios)
                           (car(reverse usuarios))
@@ -283,6 +288,7 @@
                          (getUser_idUser(getUsers_lastUser usuarios ))
                          )
   )
+
 
 
 #|(define son_amigos? (lambda(amigo lista_amigos)
@@ -418,3 +424,4 @@ usuarios
                     operation
                 )
                 "parametros no validos")))
+;--------------------------POST----------------------------------------------------

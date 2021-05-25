@@ -460,13 +460,14 @@
   )
 ;------------------------------PERTENENCIA----------------------------------
 (define es_PublicacionValida? (lambda(publicacion)
+                                (if(null? publicacion) #t
                                 (and(esNumero? (getPost_id publicacion))
                                     (date? (getPost_date publicacion))
                                     (esString? (getPost_autor publicacion))
                                     (esString? (getPost_contenido publicacion))
                                     (list? (getPost_reacciones publicacion))
                                     (list? (getPost_comments publicacion))
-                                 )
+                                 ))
                                 ))
 ;------------------------------MODIFICADORES----------------------------------
 
@@ -579,9 +580,16 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
 "pass2") (date 25 10 2021) "user3" "pass3"))
 |#
 
+;AÑADIR AMIGOS
 ;(define accionAgregarAmigos (agregar_amigo "user1" accionRegistrar (list "alejo" "valentina")))
+
+;CASO POST MISMO USUARIO
 ;(((login accionAgregarAmigos "user1" "pass1" post)(date 30 10 2020)) "mi primer post")
+
+;CASO POST DIRIGIDO A AMIGOS
 ;(((login accionAgregarAmigos "user1" "pass1" post)(date 30 10 2020)) "mi primer post" "alejo" "valentina")
+;(define login1 (((login accionAgregarAmigos "user1" "pass1" post)(date 30 10 2020)) "mi primer post" "alejo" "valentina"))
+;(((login login1 "user2" "pass2" post)(date 11 22 2020)) "segundo post")
 
 
 

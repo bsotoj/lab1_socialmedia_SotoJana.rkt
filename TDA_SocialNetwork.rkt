@@ -109,8 +109,7 @@
                                (and (es_PublicacionValida? (car lista_publicaciones)) (es_PublicacionValida? (cdr lista_publicaciones)))
                                )
                             )
-  ); pendiente
-
+  )
 
 ;-------------------------------SELECTORES-------------------------------
 (define get_snName car)
@@ -120,6 +119,9 @@
 (define get_snUsuarios (lambda(sn)(car(cdr(cdr(cdr(cdr sn)))))))
 (define get_snPublicaciones(lambda(sn)(car(cdr(cdr(cdr(cdr(cdr sn))))))))
 (define get_snGente_que_participo_en_post(lambda(sn)(car(cdr(cdr(cdr(cdr(cdr(cdr sn)))))))))
+
+
+
 
 ;-----------------------------OTRAS FUNCIONES-----------------------------
 
@@ -195,6 +197,25 @@
       [(null? lst) #f]
       [(equal? item (car lst)) #t]
       [else (member? item (cdr lst))])))
+
+
+;descripcion: funcion que actualiza el socialnetwork con el amigo que agrega un usuario
+(define sn-agregarAmigo (lambda (sn nombreUsuario amigos-que-agrega)
+                          (socialnetworkActualizado
+                           (get_snName sn)
+                           (get_snDate sn)
+                           (get_encryptFn sn)
+                           (get_decryptFn sn)
+                           (agregar_amigo nombreUsuario (get_snUsuarios sn) amigos-que-agrega)
+                           (get_snPublicaciones sn)
+                           (get_snGente_que_participo_en_post sn)
+
+                                                    )
+                          
+                          )
+  )
+
+
 ;--------------------------------------------------------------------------
 ;--------------------------------------------------------------------------
 ;--------------------------------------------------------------------------
@@ -202,6 +223,7 @@
 
 ;user(sesionActiva,idUser,username,password,date,amigos,followers)
 ;donde amigos = (usernarme1,username2,....,usernameN)
+;followers = (username1,username2,....,usernameN)
 ;----------------------------------CONSTRUCTORES--------------------------------
 ;
 ;Descrip:funcion que crea un user
@@ -258,23 +280,7 @@
                       (member? personaAVerificar lista-amigos-usuario)
                       )))
 
-#|ESTO ES LA CONDICION ANTES DE HACER UN POST
-->TIENE QUE HABER UN USER QUE SESION INICIADA
-->LAS PERSONAS TIENEN QUE ENCONTRARSE EN SU LISTA DE AMIGOS
-|#
-;asumiendo que se entrega como parametro de entrada la lista de personas a verificar si son amigos -> users
-;y que los amigos fueron agregados anteriormente
-(if(not(null? (getUser_sesionIniciada(get_snUsuario socialnetwork))))
-   (if(not(null? users)) ;significa que el post va a ir dirigido a usuarios
-      (if(mi-andmap(mi-map
-                    (son_amigos? (getUser_amigos(getUser_sesionIniciada(get_snUsuarios socialnetwork)))) users))
-         "son amigos y se puede ejecutar la funcion"
-         "las personas ingresadas no se encuentran en la lista de amigos del user actual-> retornar socialnetwork"
-         )
-      "el post va dirigido al mismo usuario"
-      )
-   ;si no se cumple la condicion, retorna el mismo social network
-   socialnetwork)
+
 
 #|
 (define publicaciones_que_participa_Validas?(lambda (lista_PParticipa)
@@ -356,6 +362,7 @@
   )
 
 (define getUser_sesionIniciada (lambda(usuarios)
+                                 ;no existe un usuario con sesion iniciada
                                 (if (null? usuarios) '()
                                (if(eqv? #t (getUser_sesionActiva(car usuarios)))
                                   (car usuarios)
@@ -365,55 +372,81 @@
 
 
 ;---------------------------------OTRAS FUNCIONES----------------------------
-(define agregar_amigo(lambda(nombreUsuario lista_usuarios lista_amigos)
-                       (if(eqv? nombreUsuario (getUser_username (car lista_usuarios)))
-                          (cons(user
-                                (getUser_sesionActiva (car lista_usuarios))
-                                (getUser_idUser (car lista_usuarios))
-                                (getUser_username(car lista_usuarios))
-                                (getUser_password(car lista_usuarios))
-                                (getUser_date(car lista_usuarios))
-                                (agregar_cola (getUser_amigos (car lista_usuarios)) lista_amigos) 
-                                )
-                                (cdr lista_usuarios))
+;se agrega un amigo a un usuario en particular
 
-                          (cons (car lista_usuarios)(agregar_amigo nombreUsuario (cdr lista_usuarios) lista_amigos))
+(define agregar_amigo(lambda(nombreUsuario sn lista_amigos)
+                       (if(eqv? nombreUsuario (getUser_username (car (get_snUsuarios sn))))
+                          (socialnetworkActualizado
+                           (get_snName sn)
+                           (get_snDate sn)
+                           (get_encryptFn sn)
+                           (get_decryptFn sn)                       
+                           (cons(user
+                                (getUser_sesionActiva (car (get_snUsuarios sn)))
+                                (getUser_idUser (car (get_snUsuarios sn)))
+                                (getUser_username(car (get_snUsuarios sn)))
+                                (getUser_password(car (get_snUsuarios sn)))
+                                (getUser_date(car (get_snUsuarios sn)))
+                                (agregar_cola (getUser_amigos (car (get_snUsuarios sn))) lista_amigos) 
+                                )
+                                (cdr (get_snUsuarios sn)))
+                           (get_snPublicaciones sn)
+                           (get_snGente_que_participo_en_post sn)
+
+                           )
+
+                          (cons (car (get_snUsuarios sn)) (agregar_amigo nombreUsuario (cdr (get_snUsuarios sn)) lista_amigos))
                           )))
+
 ;---------------------------------------------------------------------------
 ;---------------------------------------------------------------------------
 ;---------------------------------------------------------------------------
 ;------------------------------TDA PUBLICACION------------------------------
-;publicacion(idPost,date,autorPost,tipoPublicacion,contenido,reacciones,comments)
+;publicacion(idPost,date,autorPost,contenido,reacciones,comments)
 ;donde contenido = mensaje encriptado
 ;reacciones (username1,username2,...usernameN) -> usernamei = string
+;comments = TDA COMMENT
 
 ;------------------------------CONSTRUCTOR----------------------------------
 ;Descripcion: funcion que crea una publicacion
-;Dom: int X date X string X string X string X list X comment
+;Dom: int X date X string X string X string 
 ;Rec: publicacion
 ;Recursion: NA
 
-(define iniciarPublicacion(lambda(idPost date autorPost tipoPublicacion contenido)
-                               (if(and(esNumero? idPost) (date? date) (esString? autorPost) (esString? tipoPublicacion) (esString? contenido))
-                                   (list idPost date autorPost tipoPublicacion contenido '() '())
+(define inicializarPublicacion(lambda(idPost date autorPost contenido)
+                               (if(and(esNumero? idPost) (date? date) (esString? autorPost) (esString? contenido))
+                                   (list idPost date autorPost contenido '() '())
                                   '())
                                 )
 
   )
 
-(define publicacion(lambda(idPost date autorPost tipoPublicacion contenido reacciones comments)
-                     (list idPost date autorPost tipoPublicacion contenido reacciones comments)
-                     ))
+
+
+ ;primero se crea la publicacion usando inicializarPublicacion
+(define sn-agregarPublicacion (lambda (publicacionNueva lista-publicaciones)
+                                (if(null? lista-publicaciones)
+                                   (agregar_cabeza lista-publicaciones publicacionNueva)
+                                 (if (eqv? (getPost_id publicacionNueva) (getPost_id(car lista-publicaciones)))
+                                    (cons publicacionNueva (cdr lista-publicaciones))
+                                    (cons (car lista-publicaciones) (sn-agregarPublicacion publicacionNueva (cdr lista-publicaciones)))
+
+                                )
+                                )
+  )
+  )
+
+
 
 
 ;------------------------------SELECTORES----------------------------------
 (define getPost_id car)
 (define getPost_date cadr)
 (define getPost_autor caddr)
-(define getPost_tipoPublicacion cadddr)
-(define getPost_contenido (lambda(p)(car(cdr(cdr(cdr(cdr p)))))))
-(define getPost_reacciones(lambda(p)(car(cdr(cdr(cdr(cdr(cdr p))))))))
-(define getPost_comments (lambda(p)(car(cdr(cdr(cdr(cdr(cdr(cdr p)))))))))
+(define getPost_contenido cadddr)
+(define getPost_reacciones (lambda(p)(car(cdr(cdr(cdr(cdr p)))))))
+(define getPost_comments(lambda(p)(car(cdr(cdr(cdr(cdr(cdr p))))))))
+
 
 
 (define getPost_lastPost(lambda(publicaciones)
@@ -430,21 +463,20 @@
                                 (and(esNumero? (getPost_id publicacion))
                                     (date? (getPost_date publicacion))
                                     (esString? (getPost_autor publicacion))
-                                    (esString? (getPost_tipoPublicacion publicacion))
                                     (esString? (getPost_contenido publicacion))
                                     (list? (getPost_reacciones publicacion))
-                                    (comment? (getPost_comments publicacion));PENDIENTE
+                                    (list? (getPost_comments publicacion))
                                  )
                                 ))
 ;------------------------------MODIFICADORES----------------------------------
 
 ;------------------------------OTRAS FUNCIONES----------------------------------
+;user-que-reacciona = (user1,user2,.....)
 (define agregar-nueva-reaccion(lambda(idPost lista_publicaciones user-que-reacciona)
                                 (if(eqv? idPost (getPost_id(car lista_publicaciones)))
-                                   (cons(publicacion idPost
+                                   (cons(inicializarPublicacion idPost
                                                      (getPost_date (car lista_publicaciones))
                                                      (getPost_autor (car lista_publicaciones))
-                                                     (getPost_tipoPublicacion (car lista_publicaciones))
                                                      (getPost_contenido (car lista_publicaciones))
                                                      (agregar_cola (getPost_reacciones (car lista_publicaciones)) user-que-reacciona)
                                                      (getPost_comments (car lista_publicaciones))
@@ -462,39 +494,49 @@
 ;------------------------------TDA COMMENT----------------------------------
 ;comment(idPost,date,contenido,((autorComentario1,date,contenido),(autorComentario2,date,contenido),....,(autorComentarioN,date,contenido))
 
-;---------------------------------------------------------------------------
-#|
-(define usuario1(user_inicializado "user1" "pass1" (date 0 0 0) ))
-usuario1
-(define usuario2(user_inicializado "user2" "pass1" (date 0 0 0) ))
-usuario2
+;;CONSTRUCTOR
+;;un comentario tiene 
+;;(idpost+1,autorPost,fecha,mensajedescriptivo,((autor,fecha,mensajedescriptivo),(autor,fecha,mensajedescriptivo)))
+;este es el primer comentario que se le agrega a una publicacion
+(define primerComentario(lambda(lista-publicaciones date postID mensajeDescriptivo)
+                          (if(eqv? postID (getPost_id(car lista-publicaciones)))
+                             (if (and (date? date) (esNumero? postID) (esString? mensajeDescriptivo))
+                                 (cons (agregar_cola (car lista-publicaciones)
+                                                     (list postID (getPost_autor (car lista-publicaciones)) date mensajeDescriptivo '()))
+                                       (cdr lista-publicaciones))
+                                 '()
+                                 )
+                           (primerComentario (cdr lista-publicaciones) date postID mensajeDescriptivo)
+                           )
+                          )
+  )
 
-(define usuarios (list usuario1 usuario2))
-usuarios
-;(set_sesionActiva_True "user1" usuarios)
+;SELECTORES
+(define getComment_ID car)
+(define getCommet_autor cadr)
+(define getComment_date caddr)
+(define getComment_content cadddr)
+(define getComment_comments (lambda (c)(car(cdr(cdr(cdr(cdr c)))))))
+(define getComments_lastID(lambda(comentarios)
+                            (getComment_ID(car(reverse comentarios)))
+                            ))
 
-(agregar_amigo "user1"(agregar_amigo "user1" usuarios (list "user2" "user3")) (list "user4" "user5"))
-|#
+;CAMBIAR DE LADO
+;descripcion: funcion que busca la ultima id en base a las publicaciones y comentarios que contiene dicha publicacion
+(define getLastID (lambda(publicaciones)
+                    (if (null? (getPost_comments (getPost_lastPost publicaciones)) )
+                              (getPost_lastID publicaciones)
+                              (if(null? (getComment_comments(getPost_comments(getPost_lastPost publicaciones))))
+                                        (getComment_ID (getPost_comments(getPost_lastPost publicaciones)))
+                                        (getComments_lastID (getComment_comments(getPost_comments(getPost_lastPost publicaciones)))
+                                        )
+                              )
+  )))
 ;------------------------------------------------------------------------
 ;DEFINITIVA
 ;TDA PARTICIPACION POST
 ;donde R: valor actual que tienen las participaciones
-(define agregarNuevaParticipacion(lambda(usuarios idPost R)
-                                   (if(empty? usuarios)R
-                                      (agregarNuevaParticipacion (cdr usuarios) idPost (cons (list (car usuarios) idPost) R))
-                                      )))
-;FUNCION ARREGLADA
-(define agregar_cabeza
-  (lambda (lista elemento)
-    (cons elemento lista)))
-
-(define agregar_cola (lambda(lista elemento)
-                            (if(empty? lista)
-                               elemento
-                               (cons (car lista) (agregar_cola (cdr lista) elemento))
-                               )
-                            ))
-
+;se usa para el post/share
 
 (define noExistePostParticipado? (lambda(idPost lista-personas-que-participan-en-post)
                                  (if(null? lista-personas-que-participan-en-post)#t
@@ -502,6 +544,8 @@ usuarios
                                        (noExistePostParticipado? idPost  (cdr lista-personas-que-participan-en-post)
                                     )
                                  ))))
+;se usa cuando ya existe la idPost con participantes
+;los nuevos participantes los agrega a la cola
 (define añadir-participante-por-idPost (lambda(idPost lista-personas participante)
                                          (if(eqv? idPost (car(car lista-personas)))
                                             (cons (agregar_cola (car lista-personas) participante) (cdr lista-personas))
@@ -510,33 +554,23 @@ usuarios
 
 (define agregarNuevaParticipacion(lambda(idPost lista-participantes nuevos-participantes)
                                    (if(null? lista-participantes)
+                                      ;la lista esta vacia, por lo tanto corresponde a la primera
                                       (agregar_cabeza lista-participantes (agregar_cabeza nuevos-participantes idPost))
+                                      ;se verifica si ya existe una lista de participantes con una idPOST en particular
                                       (if(noExistePostParticipado? idPost lista-participantes)
                                       (agregar_cola lista-participantes (list(agregar_cabeza nuevos-participantes idPost))
                                       
                                       )
                                       (añadir-participante-por-idPost idPost lista-participantes nuevos-participantes)
                                       ))))
-
+#|
 (define usuarios (list "user1" "user2" "user3"))
 (define a (agregarNuevaParticipacion 4 '() usuarios))
 (define b(agregarNuevaParticipacion 5 a (list "user7" "user8" "user9")))
 (agregarNuevaParticipacion 5 b (list "user0" "userA" "userb"))
-salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA" "userb"))
+salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA" "userb"))|#
 ;--------------------------FUNCIONES OBLIGATORIAS--------------------------------------
 
-#|
-(define usuario1(user_inicializado "user1" "pass1" (date 0 0 0) ))
-usuario1
-(define usuario2(user_inicializado "user2" "pass1" (date 0 0 0) ))
-usuario2
-
-(define usuarios (list usuario1 usuario2))
-usuarios
-;(set_sesionActiva_True "user1" usuarios)
-
-(agregar_amigo "user1"(agregar_amigo "user1" usuarios (list "user2" "user3")) (list "user4" "user5"))
-|#
 
 
 ;--------------------PRUEBAS FUNCIONES OBLIGATORIAS-------------------------------------
@@ -545,12 +579,18 @@ usuarios
 "pass2") (date 25 10 2021) "user3" "pass3"))
 |#
 
+;(define accionAgregarAmigos (agregar_amigo "user1" accionRegistrar (list "alejo" "valentina")))
+;(((login accionAgregarAmigos "user1" "pass1" post)(date 30 10 2020)) "mi primer post")
+;(((login accionAgregarAmigos "user1" "pass1" post)(date 30 10 2020)) "mi primer post" "alejo" "valentina")
+
+
+
 ;(login accionRegistrar "user2" "pass2" funcion)
 
 ;(define accionLogin (login accionRegistrar "user2" "pass2" funcion))
 ;(getUser_sesionIniciada(get_snUsuarios accionLogin))
 
-
+;(((login facebook “user” “pass” post) (date 30 10 2020)) “mi primer post”)
 
 ;--------------------------REGISTER----------------------------------------------------
 ;Descripcion: funcion que registra a un nuevo usuario en la red social
@@ -626,4 +666,119 @@ usuarios
                 "parametros no validos")))
 
 ;--------------------------POST----------------------------------------------------
-;(define funcion(lambda(sn)sn))
+#|(define bimbo(lambda (a b c)(list a b c)))
+(define a(lambda(valor1)(lambda(valor2 . valor3)
+                          (bimbo valor1 valor2 valor3)
+                          )))
+salida a = ((a 1)"hola" "alejo" "valentina")
+
+
+(define getUser_sesionIniciada (lambda(usuarios)
+                                (if (null? usuarios) '()
+                               (if(eqv? #t (getUser_sesionActiva(car usuarios)))
+                                  (car usuarios)
+                                  (getUser_sesionIniciada (cdr usuarios))
+                               )
+                                )))
+
+(define son-amigos? (lambda(lista-amigos-usuario)
+                      (lambda(personaAVerificar)
+                      (member? personaAVerificar lista-amigos-usuario)
+                      )))
+
+|#
+;Descripcion: Función que permite a un usuario con sesión iniciada en
+;la plataforma realizar una nueva publicación propia o dirigida a otros usuarios
+;Dom: socialnetwork
+;rec: socialnetwork
+                                  
+(define post(lambda (sn)
+              (lambda(date)(lambda(content . users)
+              ;se verifica que exista un usuario con sesion iniciada
+              (if(not(null? (getUser_sesionIniciada(get_snUsuarios sn))))
+                 ;esta condicion verifica si el post es dirigido a otros usuarios
+                 ;null = post dirigido a mismo usuario
+                 ;not null =  post dirigido a otros usuarios incluyendo al que lo creo
+                 (if(not(null? users))
+                    ;ahora se verifica si los usuarios ingresados pertenecen a la lista de amigos de la persona que realiza
+                    ;el post
+                    (if(mi-andmap(mi-map
+                                  (son-amigos? (getUser_amigos(getUser_sesionIniciada(get_snUsuarios sn)))) users ))
+                       ;es el primer post que se hace en la red social?           
+                       (if(null? (get_snPublicaciones sn))        
+                          (socialnetworkActualizado
+                           (get_snName sn)
+                           (get_snDate sn)
+                           (get_encryptFn sn)
+                           (get_decryptFn sn)
+                           (set_sesionActiva_False (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) (get_snUsuarios sn))
+                           (sn-agregarPublicacion (inicializarPublicacion 0 date (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) ((get_encryptFn sn)content))          
+                                                  (get_snPublicaciones sn))
+                           (agregarNuevaParticipacion 0 (get_snGente_que_participo_en_post sn) (agregar_cabeza users (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))))
+                           )
+                       ;existe una o mas publicaciones
+                           (socialnetworkActualizado
+                           (get_snName sn)
+                           (get_snDate sn)
+                           (get_encryptFn sn)
+                           (get_decryptFn sn)
+                           (set_sesionActiva_False (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) (get_snUsuarios sn))
+                           (sn-agregarPublicacion (inicializarPublicacion (+ 1 (getLastID (get_snPublicaciones sn))) date (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) ((get_encryptFn sn)content))                         
+                                                  (get_snPublicaciones sn) )
+
+                           (agregarNuevaParticipacion (+ 1 (getLastID (get_snPublicaciones sn))) (get_snGente_que_participo_en_post sn) (agregar_cabeza users (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))))
+                           )
+                          )
+
+                       
+                       ;las personas ingresadas no se encuentran en la lista de amigos del user actual
+                       sn
+                       )
+                    
+                    ;publicacion dirigida al mismo usuario
+                    ;es primera publicacion que se hace en red social?
+                    (if(null? (get_snPublicaciones sn))
+                          (socialnetworkActualizado
+                           (get_snName sn)
+                           (get_snDate sn)
+                           (get_encryptFn sn)
+                           (get_decryptFn sn)
+                           (set_sesionActiva_False (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) (get_snUsuarios sn))
+                           (sn-agregarPublicacion (inicializarPublicacion 0 date (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))  ((get_encryptFn sn)content))        
+                                                  (get_snPublicaciones sn))
+                           (agregarNuevaParticipacion 0 (get_snGente_que_participo_en_post sn) (list (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))))
+                           )
+
+                          ;existe una publicacion
+                          (socialnetworkActualizado
+                           (get_snName sn)
+                           (get_snDate sn)
+                           (get_encryptFn sn)
+                           (get_decryptFn sn)
+                           (set_sesionActiva_False (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) (get_snUsuarios sn))
+                           (sn-agregarPublicacion (inicializarPublicacion (+ 1 (getLastID (get_snPublicaciones sn))) date (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) ((get_encryptFn sn)content))
+                                                  (get_snPublicaciones sn))
+
+                           (agregarNuevaParticipacion (+ 1 (getLastID (get_snPublicaciones sn))) (get_snGente_que_participo_en_post sn)  (list (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))))
+                           )
+                
+
+                    
+                    )
+                    )
+
+
+                 ;no se encontro algun usuario con sesion iniciada
+                 sn
+                 )
+
+
+              )
+  )))
+
+                               
+                                
+
+  
+
+

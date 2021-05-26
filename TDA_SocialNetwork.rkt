@@ -282,7 +282,6 @@
                       )))
 
 
-                                           
 ;-----------------------------------MODIFICADORES-------------------------
 (define set_sesionActiva_True (lambda(username lista_usuarios)
                                 (if (eqv? username (getUser_username(car lista_usuarios)))
@@ -365,33 +364,40 @@
 
 
 ;---------------------------------OTRAS FUNCIONES----------------------------
-;se agrega un amigo a un usuario en particular
 
-(define agregar_amigo(lambda(nombreUsuario sn lista_amigos)
-                       (if(eqv? nombreUsuario (getUser_username (car (get_snUsuarios sn))))
+(define usuario-agregar-amigo(lambda(nombreUsuario lista_usuarios amigosNuevos)
+                               
+                               (if(eqv? nombreUsuario (getUser_username(car lista_usuarios)))
+                                  (cons (user
+                                         (getUser_sesionActiva (car lista_usuarios))
+                                         (getUser_idUser (car lista_usuarios))
+                                         (getUser_username (car lista_usuarios))
+                                         (getUser_password (car lista_usuarios))
+                                         (getUser_date (car lista_usuarios))
+                                         (agregar_cola (getUser_amigos (car lista_usuarios)) amigosNuevos)
+                                         (getUser_followers (car lista_usuarios))
+                                         )
+                                        
+                                   (cdr lista_usuarios))
+                                  (cons (car lista_usuarios)(usuario-agregar-amigo nombreUsuario (cdr lista_usuarios) amigosNuevos))
+                                  )
+                               ))
+
+
+
+(define agregar_amigo(lambda(nombreUsuario sn amigosNuevos)
                           (socialnetworkActualizado
                            (get_snName sn)
                            (get_snDate sn)
                            (get_encryptFn sn)
                            (get_decryptFn sn)                       
-                           (cons(user
-                                (getUser_sesionActiva (car (get_snUsuarios sn)))
-                                (getUser_idUser (car (get_snUsuarios sn)))
-                                (getUser_username(car (get_snUsuarios sn)))
-                                (getUser_password(car (get_snUsuarios sn)))
-                                (getUser_date(car (get_snUsuarios sn)))
-                                (agregar_cola (getUser_amigos (car (get_snUsuarios sn))) lista_amigos)
-                                (getUser_followers(car (get_snUsuarios sn)))
-                                )
-                                (cdr (get_snUsuarios sn)))
+                           (usuario-agregar-amigo nombreUsuario (get_snUsuarios sn) amigosNuevos)
                            (get_snPublicaciones sn)
                            (get_snGente_que_participo_en_post sn)
                            (get_snPosts_Compartidos sn)
 
                            )
-
-                          (cons (car (get_snUsuarios sn)) (agregar_amigo nombreUsuario (cdr (get_snUsuarios sn)) lista_amigos))
-                          )))
+                          ))
 
 
 (define agregar_seguidor(lambda(nombreUsuario nombreNuevoSeguidor date lista_usuarios)
@@ -588,17 +594,23 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
 
 
 
-;--------------------EJEMPLO COMO USAR LAS FUNCIONES OBLIGATORIAS-------------------------------------
+;--------------------EJEMPLO DE COMO USAR LAS FUNCIONES OBLIGATORIAS-------------------------------------
 
 ;-------------------------------------------FUNCION REGISTER--------------------------------------
+;PRIMERO SE DEFINE LA RED SOCIAL--> EN ESTE CASO LA RED SOCIAL SE ENCUENTRA EN emptyFB
 ;(define emptyFB (socialnetwork "fb" (date 25 10 2021) encryptFn encryptFn))
+
+;SE REGISTRAN LOS USUARIOS EN LA RED SOCIAL CREADA
 #|(define accionRegistrar(register (register (register emptyFB (date 25 10 2021) "user1" "pass1") (date 25 10 2021) "user2"
 "pass2") (date 25 10 2021) "user3" "pass3"))
 |#
 
-;AÑADIR AMIGOS
-;(define accionAgregarAmigos (agregar_amigo "user1" accionRegistrar (list "alejo" "valentina")))
+;AÑADIR AMIGOS --> SE REQUIERE ANTES DE HACER UN POST YA QUE SE DEBE VERIFICAR SI A LAS PERSONAS A LAS QUE VA DIRIGIDAS EL POST
+;SE ENCUENTRAN EN LA LISTA DE AMIGOS DEL USUARIO
 
+;(define accionAgregarAmigos (agregar_amigo "user1" accionRegistrar (list "alejo" "valentina")))
+;(define accionAgregarAmigos2(agregar_amigo "user3" accionAgregarAmigos (list "elviejo" "carlitox")))
+;(define agregarAmigos3(agregar_amigo "user2" accionAgregarAmigos2 (list "matias" "gregory")))
 
 ;--------------------------------------------FUNCION POST--------------------------------------------
 ;CASO POST MISMO USUARIO
@@ -607,14 +619,16 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
 ;CASO POST DIRIGIDO A AMIGOS
 ;usando el login anterior
 ;(define login1 (((login accionAgregarAmigos "user1" "pass1" post)(date 30 10 2020)) "mi primer post" "alejo" "valentina"))
-
-;(((login login1 "user2" "pass2" post)(date 11 22 2020)) "segundo post")
+;(define login2(((login login1 "user2" "pass2" post)(date 11 22 2020)) "segundo post"))
 
 ;-------------------------------------------FUNCION FOLLOW-------------------------------------------
-#|(define follow1(((login login1 "user1" "pass1" follow) (date 30 10 2020))
+;USUARIO1 SIGUE A USUARIO2
+#|(define follow1(((login login1 "user1" "pass1" follow) (date 30 10 2020)))
  "user2"))|#
 
-;(((login follow1 "user1" "pass1" follow)(date 25 5 2021))"user3")
+;USUARIOS1 SIGUE A USUARIO3 Y USUARIO3 SIGUE A USUARIO2
+;(define follow2(((login follow1 "user1" "pass1" follow)(date 25 5 2021))"user3"))
+;(define follow3(((login follow2 "user3" "pass3" follow)(date 15 02 2021))"user2"))
 
 ;--------------------------------------------------------------------------------------
 ;--------------------------------------------------------------------------------------

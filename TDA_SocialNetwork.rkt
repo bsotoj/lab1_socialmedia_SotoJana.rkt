@@ -224,7 +224,7 @@
 
 ;user(sesionActiva,idUser,username,password,date,amigos,followers)
 ;donde amigos = (usernarme1,username2,....,usernameN)
-;followers = (username1,username2,....,usernameN)
+;followers = ((date,IDPOST,username1),(date,IDPOST,username2,....))
 ;----------------------------------CONSTRUCTORES--------------------------------
 ;
 ;Descrip:funcion que crea un user
@@ -232,7 +232,7 @@
 ;Rec:user
 ;Recursion: NA
 
-(define user(lambda(sesionActiva userID username password date amigos)
+(define user(lambda(sesionActiva userID username password date amigos followers)
               (if (and (boolean? sesionActiva)
                        (esNumero? userID)
                        (esString? username)
@@ -240,7 +240,7 @@
                        (date? date)
                        (listaAmigos_valida? amigos)
                         ) 
-                       (list sesionActiva userID username password date amigos '())
+                       (list sesionActiva userID username password date amigos followers)
                   '()
                   )
               )
@@ -282,16 +282,7 @@
                       )))
 
 
-
-#|
-(define publicaciones_que_participa_Validas?(lambda (lista_PParticipa)
-                                              (if (null? lista_PParticipa)#t
-                                                  (and (esNumero? (car lista_PParticipa))
-                                                       (publicaciones_que_participa_Validas? (cdr lista_PParticipa)))
-                                                  )
-                                              )
-  )
-|#                                              
+                                           
 ;-----------------------------------MODIFICADORES-------------------------
 (define set_sesionActiva_True (lambda(username lista_usuarios)
                                 (if (eqv? username (getUser_username(car lista_usuarios)))
@@ -303,6 +294,7 @@
                                           (getUser_password(car lista_usuarios))
                                           (getUser_date(car lista_usuarios))
                                           (getUser_amigos(car lista_usuarios))
+                                          (getUser_followers(car lista_usuarios))
                                           )
                                           (cdr lista_usuarios))
                                     ;caso recursivo
@@ -322,6 +314,7 @@
                                           (getUser_password(car lista_usuarios))
                                           (getUser_date(car lista_usuarios))
                                           (getUser_amigos(car lista_usuarios))
+                                          (getUser_followers(car lista_usuarios))
                                           )
                                           (cdr lista_usuarios))
                                     ;caso recursivo
@@ -345,10 +338,9 @@
 (define getUser_amigos (lambda(usuario)
                     (car(cdr(cdr(cdr(cdr (cdr usuario)))))
                     )))
-
+ 
 (define getUser_followers (lambda(usuario)
-                    (car(cdr(cdr(cdr(cdr(cdr (cdr usuario)))))
-                    ))))
+                    (car(reverse usuario))))
 
 
 
@@ -388,7 +380,8 @@
                                 (getUser_username(car (get_snUsuarios sn)))
                                 (getUser_password(car (get_snUsuarios sn)))
                                 (getUser_date(car (get_snUsuarios sn)))
-                                (agregar_cola (getUser_amigos (car (get_snUsuarios sn))) lista_amigos) 
+                                (agregar_cola (getUser_amigos (car (get_snUsuarios sn))) lista_amigos)
+                                (getUser_followers(car (get_snUsuarios sn)))
                                 )
                                 (cdr (get_snUsuarios sn)))
                            (get_snPublicaciones sn)
@@ -400,6 +393,25 @@
                           (cons (car (get_snUsuarios sn)) (agregar_amigo nombreUsuario (cdr (get_snUsuarios sn)) lista_amigos))
                           )))
 
+
+(define agregar_seguidor(lambda(nombreUsuario nombreNuevoSeguidor date lista_usuarios)
+                          (if(eqv? nombreUsuario (getUser_username(car lista_usuarios)))
+                             (cons (user (getUser_sesionActiva (car lista_usuarios))
+                                         (getUser_idUser (car lista_usuarios))
+                                         (getUser_username(car lista_usuarios))
+                                         (getUser_password(car lista_usuarios))
+                                         (getUser_date(car lista_usuarios))
+                                         (getUser_amigos(car lista_usuarios))
+                                         (agregar_cola (getUser_followers(car lista_usuarios)) (list (agregar_cabeza (list nombreNuevoSeguidor) date)))         
+                                         )
+                                   (cdr lista_usuarios)
+                                   )
+                             (cons (car lista_usuarios)(agregar_seguidor nombreUsuario nombreNuevoSeguidor date (cdr lista_usuarios)))
+                             )))
+                          
+                          
+;(agregar_cola (list (agregar_cabeza (list "a" "b") (date 1 1 1111))) (list (agregar_cabeza (list "c" "d") (date 2 2 2222))))
+;SALIDA = (((1 1 1111) "a" "b") ((2 2 2222) "c" "d"))
 ;---------------------------------------------------------------------------
 ;---------------------------------------------------------------------------
 ;---------------------------------------------------------------------------
@@ -576,7 +588,9 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
 
 
 
-;--------------------PRUEBAS FUNCIONES OBLIGATORIAS-------------------------------------
+;--------------------EJEMPLO COMO USAR LAS FUNCIONES OBLIGATORIAS-------------------------------------
+
+;-------------------------------------------FUNCION REGISTER--------------------------------------
 ;(define emptyFB (socialnetwork "fb" (date 25 10 2021) encryptFn encryptFn))
 #|(define accionRegistrar(register (register (register emptyFB (date 25 10 2021) "user1" "pass1") (date 25 10 2021) "user2"
 "pass2") (date 25 10 2021) "user3" "pass3"))
@@ -585,23 +599,26 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
 ;AÑADIR AMIGOS
 ;(define accionAgregarAmigos (agregar_amigo "user1" accionRegistrar (list "alejo" "valentina")))
 
+
+;--------------------------------------------FUNCION POST--------------------------------------------
 ;CASO POST MISMO USUARIO
 ;(((login accionAgregarAmigos "user1" "pass1" post)(date 30 10 2020)) "mi primer post")
 
 ;CASO POST DIRIGIDO A AMIGOS
-;(((login accionAgregarAmigos "user1" "pass1" post)(date 30 10 2020)) "mi primer post" "alejo" "valentina")
+;usando el login anterior
 ;(define login1 (((login accionAgregarAmigos "user1" "pass1" post)(date 30 10 2020)) "mi primer post" "alejo" "valentina"))
+
 ;(((login login1 "user2" "pass2" post)(date 11 22 2020)) "segundo post")
 
+;-------------------------------------------FUNCION FOLLOW-------------------------------------------
+#|(define follow1(((login login1 "user1" "pass1" follow) (date 30 10 2020))
+ "user2"))|#
 
+;(((login follow1 "user1" "pass1" follow)(date 25 5 2021))"user3")
 
-;(login accionRegistrar "user2" "pass2" funcion)
-
-;(define accionLogin (login accionRegistrar "user2" "pass2" funcion))
-;(getUser_sesionIniciada(get_snUsuarios accionLogin))
-
-;(((login facebook “user” “pass” post) (date 30 10 2020)) “mi primer post”)
-
+;--------------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------
 ;--------------------------REGISTER----------------------------------------------------
 ;Descripcion: funcion que registra a un nuevo usuario en la red social
 ;Dom: socialnetwork X date X string X string
@@ -618,7 +635,7 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
                                                    (get_snDate socialnetwork)
                                                    (get_encryptFn socialnetwork)
                                                    (get_decryptFn socialnetwork)
-                                                   (agregar_cola (get_snUsuarios socialnetwork)(list(user #f 0 username password date '())))
+                                                   (agregar_cola (get_snUsuarios socialnetwork)(list(user #f 0 username password date '() '())))
                                                    (get_snPublicaciones socialnetwork)
                                                    (get_snGente_que_participo_en_post socialnetwork)
                                                    (get_snPosts_Compartidos socialnetwork)
@@ -634,6 +651,7 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
                                                                        username
                                                                        password
                                                                        date
+                                                                       '()
                                                                        '())))
                                                    (get_snPublicaciones socialnetwork)
                                                    (get_snGente_que_participo_en_post socialnetwork)
@@ -710,6 +728,7 @@ salida a = ((a 1)"hola" "alejo" "valentina")
                                   
 (define post(lambda (sn)
               (lambda(date)(lambda(content . users)
+              (if(and(esRedSocial? sn) (date? date) (esString? content))
               ;se verifica que exista un usuario con sesion iniciada
               (if(not(null? (getUser_sesionIniciada(get_snUsuarios sn))))
                  ;esta condicion verifica si el post es dirigido a otros usuarios
@@ -791,14 +810,51 @@ salida a = ((a 1)"hola" "alejo" "valentina")
                  ;no se encontro algun usuario con sesion iniciada
                  sn
                  )
+                ;la red social ingresada no es valida
+              '()
+                )
 
 
               )
   )))
 
                                
-                                
+;--------------------------FOLLOW----------------------------------------------------    
+;descripcion: funcion que permite a un usuario con sesion iniciada en la plataforma seguir a otro usuario
+;dom: social network
+;recorrido: socialnetwork
+(define follow(lambda(sn)
+         (lambda(date)
+           (lambda(user)
+             ;se verifica que exista una sesion activa
+             (if(and(esRedSocial? sn) (esString? user) (date? date))
+             (if(not(null? (getUser_sesionIniciada(get_snUsuarios sn))))
+                ;se verifica que el usuario a seguir con el usuario login no sean iguales
+                (if (not(eqv? user (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))))
+                    (socialnetworkActualizado
+                     (get_snName sn)
+                     (get_snDate sn)
+                     (get_encryptFn sn)
+                     (get_decryptFn sn)
+                     (set_sesionActiva_False (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))
+                                             (agregar_seguidor user (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) date (get_snUsuarios sn)))
+                     
+                     
+                     (get_snPublicaciones sn)
+                     (get_snGente_que_participo_en_post sn)
+                     (get_snPosts_Compartidos sn)
+                     )
+                    "un usuario no puede seguirse a si mismo"
+                    )
+                ;no se ha encontrado una sesion activa
+                sn
+                )
+             ;la red social recibida como entrada no es valida
+             '()
+             )
+             )
 
+             ))
+              )
   
-
 

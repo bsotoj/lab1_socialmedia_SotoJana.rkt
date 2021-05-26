@@ -51,6 +51,29 @@
 ;Dom: String X Date X EncryptFunction X DecryptFunction
 ;Rec: SocialNetwork
 
+#|
+
+ el tda socialnetwork ademas de incluir los parametros de entrada con los que inicializa, se le agregan otros 4 que son
+users, posts, usersActivity posts-compartidos.
+
+
+*users contiene toda la informacion relacionada con un usuario esto es -> el estado de su sesion
+, la id que tiene, nombre de usuario, contraseña, date (en que fecha se creo dicho usuario), amigos (se utilizan en funciones posteriores
+que basicamente es para indicar si a las personas a las que va dirigido un post son amigos del usuario que lo envia) y los seguidores
+que tiene dicho usuario
+
+*publicacion es usado a la hora de crear un post,cada publicacion contine la id del post, date, el autor del post, contenido/mensajedescriptivo
+,reacciones (su uso es para las funciones opcionales) y comentarios.
+
+*usersActivity se utiliza al hacer un post, que indica el idPost y a los usuarios que fueron
+dirigidos -> (0 alejo valentina) -> el post con id 0 fue dirigido a alejo y valentina
+
+*posts-compartidos se usa al operar con un share, donde cada posicion de posts-compartidos contiene
+(idPost date usuarios), por lo tanto, en usersActivity y posts-compartidos no habria problema para saber
+cual es el post en el que participaron/se les compartio y el autor original de la publicacion, ya que el id
+y el nombre del autor se incluyen en el TDA PUBLICACION
+
+|#
 (define socialnetwork(lambda(name date encryptFn decryptFn)
                        (if(and(esString? name)(date? date)(funcion? encryptFn)(funcion? decryptFn))
                           (list name date encryptFn decryptFn '() '() '() '())
@@ -633,6 +656,13 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
 ;(define follow2(((login follow1 "user1" "pass1" follow)(date 25 5 2021))"user3"))
 ;(define follow3(((login follow2 "user3" "pass3" follow)(date 15 02 2021))"user2"))
 
+;-----------------------------------------FUNCION SHARE----------------------------------------------
+;USANDO LOGIN2
+;SI ES DIRIGIDO A LOS AMIGOS DE LA PERSONA QUE LOGEA
+;(define share1(((login login2 "user1" "pass1" share)(date 30 10 2020))1 "alejo" "valentina"))
+;(((login share1 "user2" "pass2" share)(date 12 5 2019))2 "matias" "gregory")
+;SI ES DIRIGIDO AL MISMO USUARIO
+;(((login share1 "user2" "pass2" share)(date 12 5 2019))2)
 ;--------------------------------------------------------------------------------------
 ;--------------------------------------------------------------------------------------
 ;--------------------------------------------------------------------------------------
@@ -874,4 +904,51 @@ salida a = ((a 1)"hola" "alejo" "valentina")
              ))
               )
   
+;--------------------------SHARE----------------------------------------------------    
+#|
+descripcion: funcion que permite compartir contenido de un usuario en su propio espacio o dirigido a otros usuarios
+dom: socialnetwork
+recorrido: socialnetwork
+|#
+(define share(lambda(sn)
+               (lambda(date)
+                 (lambda(postID . users)
+                   (if(and (esRedSocial? sn) (date? date) (esNumero? postID))
+                      ;se verifica si hay un usuario con sesion activa
+                      (if(not(null? (getUser_sesionIniciada(get_snUsuarios sn))))
+                         ;si (null? users) es verdadero -> el usuario comparte el post a si mismo 
+                         (if (null? users)
+                             (socialnetworkActualizado
+                              (get_snName sn)
+                              (get_snDate sn)
+                              (get_encryptFn sn)
+                              (get_decryptFn sn)
+                              (set_sesionActiva_False(getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) (get_snUsuarios sn))
+                              (get_snPosts_Compartidos sn)
+                              (get_snGente_que_participo_en_post sn)
+                              (agregar_cola (get_snPosts_Compartidos sn) (list(agregar_cabeza (list date (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))) postID)))
+                              )
 
+                             ;se comparte la publicacion con users
+                             (socialnetworkActualizado
+                              (get_snName sn)
+                              (get_snDate sn)
+                              (get_encryptFn sn)
+                              (get_decryptFn sn)
+                              (set_sesionActiva_False(getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) (get_snUsuarios sn))
+                              (get_snPosts_Compartidos sn)
+                              (get_snGente_que_participo_en_post sn)
+                              (agregar_cola (get_snPosts_Compartidos sn) (list(agregar_cabeza (agregar_cabeza users date) postID)))
+                              )
+                             
+                             )
+                         
+
+                         ;si no hay sesion activa se retorna la red social sin cambios
+                         sn
+                         )
+                      "red social no valida"
+                      )
+                   )
+                 )
+               ))

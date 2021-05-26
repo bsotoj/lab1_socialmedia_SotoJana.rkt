@@ -44,7 +44,7 @@
 
 
 ;TDA SocialNetwork
-;(name, date, encryptFn decryptFn,usuarios, publicaciones,gente_que_participo_en_post)
+;(name, date, encryptFn decryptFn,usuarios, publicaciones,gente_que_participo_en_post,posts-compartidos-a-usuarios)
 
 
 ;Constructor
@@ -53,14 +53,14 @@
 
 (define socialnetwork(lambda(name date encryptFn decryptFn)
                        (if(and(esString? name)(date? date)(funcion? encryptFn)(funcion? decryptFn))
-                          (list name date encryptFn decryptFn '() '() '())
+                          (list name date encryptFn decryptFn '() '() '() '())
                           '()
                           )
                        )
   )
 
-(define socialnetworkActualizado (lambda(snName snDate fn1 fn2 users posts usersActivity)
-                                   (list snName snDate fn1 fn2 users posts usersActivity)
+(define socialnetworkActualizado (lambda(snName snDate fn1 fn2 users posts usersActivity posts-compartidos)
+                                   (list snName snDate fn1 fn2 users posts usersActivity posts-compartidos)
   ))
 
 ;----------------------------------PERTENENCIA-----------------------
@@ -119,6 +119,7 @@
 (define get_snUsuarios (lambda(sn)(car(cdr(cdr(cdr(cdr sn)))))))
 (define get_snPublicaciones(lambda(sn)(car(cdr(cdr(cdr(cdr(cdr sn))))))))
 (define get_snGente_que_participo_en_post(lambda(sn)(car(cdr(cdr(cdr(cdr(cdr(cdr sn)))))))))
+(define get_snPosts_Compartidos(lambda(sn)(car(cdr(cdr(cdr(cdr(cdr(cdr(cdr sn))))))))))
 
 
 
@@ -392,6 +393,7 @@
                                 (cdr (get_snUsuarios sn)))
                            (get_snPublicaciones sn)
                            (get_snGente_que_participo_en_post sn)
+                           (get_snPosts_Compartidos sn)
 
                            )
 
@@ -618,7 +620,9 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
                                                    (get_decryptFn socialnetwork)
                                                    (agregar_cola (get_snUsuarios socialnetwork)(list(user #f 0 username password date '())))
                                                    (get_snPublicaciones socialnetwork)
-                                                   (get_snGente_que_participo_en_post socialnetwork))
+                                                   (get_snGente_que_participo_en_post socialnetwork)
+                                                   (get_snPosts_Compartidos socialnetwork)
+                                                   )
                              ;ya existe 1 o mas usuarios
                              (socialnetworkActualizado (get_snName socialnetwork)
                                                    (get_snDate socialnetwork)
@@ -632,7 +636,9 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
                                                                        date
                                                                        '())))
                                                    (get_snPublicaciones socialnetwork)
-                                                   (get_snGente_que_participo_en_post socialnetwork))
+                                                   (get_snGente_que_participo_en_post socialnetwork)
+                                                   (get_snPosts_Compartidos socialnetwork)
+                                                   )
                              
 
 
@@ -668,7 +674,9 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
                                                    (get_decryptFn socialnetwork)
                                                    (set_sesionActiva_True username (get_snUsuarios socialnetwork))
                                                    (get_snPublicaciones socialnetwork)
-                                                   (get_snGente_que_participo_en_post socialnetwork)))
+                                                   (get_snGente_que_participo_en_post socialnetwork)
+                                                   (get_snPosts_Compartidos socialnetwork)
+                                                   ))
                     operation
                 )
                 "parametros no validos")))
@@ -722,7 +730,8 @@ salida a = ((a 1)"hola" "alejo" "valentina")
                            (set_sesionActiva_False (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) (get_snUsuarios sn))
                            (sn-agregarPublicacion (inicializarPublicacion 0 date (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) ((get_encryptFn sn)content))          
                                                   (get_snPublicaciones sn))
-                           (agregarNuevaParticipacion 0 (get_snGente_que_participo_en_post sn) (agregar_cabeza users (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))))
+                           (agregarNuevaParticipacion 0 (get_snGente_que_participo_en_post sn) users  )
+                           (get_snPosts_Compartidos sn)
                            )
                        ;existe una o mas publicaciones
                            (socialnetworkActualizado
@@ -734,7 +743,8 @@ salida a = ((a 1)"hola" "alejo" "valentina")
                            (sn-agregarPublicacion (inicializarPublicacion (+ 1 (getLastID (get_snPublicaciones sn))) date (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))) ((get_encryptFn sn)content))                         
                                                   (get_snPublicaciones sn) )
 
-                           (agregarNuevaParticipacion (+ 1 (getLastID (get_snPublicaciones sn))) (get_snGente_que_participo_en_post sn) (agregar_cabeza users (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))))
+                           (agregarNuevaParticipacion (+ 1 (getLastID (get_snPublicaciones sn))) (get_snGente_que_participo_en_post sn) users)
+                            (get_snPosts_Compartidos sn)
                            )
                           )
 
@@ -755,6 +765,7 @@ salida a = ((a 1)"hola" "alejo" "valentina")
                            (sn-agregarPublicacion (inicializarPublicacion 0 date (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))  ((get_encryptFn sn)content))        
                                                   (get_snPublicaciones sn))
                            (agregarNuevaParticipacion 0 (get_snGente_que_participo_en_post sn) (list (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))))
+                            (get_snPosts_Compartidos sn)
                            )
 
                           ;existe una publicacion
@@ -768,6 +779,7 @@ salida a = ((a 1)"hola" "alejo" "valentina")
                                                   (get_snPublicaciones sn))
 
                            (agregarNuevaParticipacion (+ 1 (getLastID (get_snPublicaciones sn))) (get_snGente_que_participo_en_post sn)  (list (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))))
+                            (get_snPosts_Compartidos sn)
                            )
                 
 

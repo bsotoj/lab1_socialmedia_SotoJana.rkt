@@ -106,7 +106,7 @@
 
 (define sonPublicaciones? (lambda (lista_publicaciones)
                             (if(null? lista_publicaciones)#t
-                               (and (es_PublicacionValida? (car lista_publicaciones)) (es_PublicacionValida? (cdr lista_publicaciones)))
+                               (and (es_PublicacionValida? (car lista_publicaciones)) (sonPublicaciones? (cdr lista_publicaciones)))
                                )
                             )
   )
@@ -623,9 +623,12 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
 
 ;-------------------------------------------FUNCION FOLLOW-------------------------------------------
 ;USUARIO1 SIGUE A USUARIO2
-#|(define follow1(((login login1 "user1" "pass1" follow) (date 30 10 2020)))
- "user2"))|#
+#|
+(define follow1(((login login2 "user1" "pass1" follow) (date 30 10 2020))
+ "user2"))
 
+|#
+;
 ;USUARIOS1 SIGUE A USUARIO3 Y USUARIO3 SIGUE A USUARIO2
 ;(define follow2(((login follow1 "user1" "pass1" follow)(date 25 5 2021))"user3"))
 ;(define follow3(((login follow2 "user3" "pass3" follow)(date 15 02 2021))"user2"))

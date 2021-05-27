@@ -1,9 +1,4 @@
 #lang racket
-;
-;Descrip:
-;Dom:
-;Rec:
-;Recursion:
 
 ;TDA Date
 ;date(dia,mes,año)
@@ -41,6 +36,10 @@
 ;Recursion: NA 
 (define encryptFn (lambda (s) (list->string (reverse (string->list s)))))
 (define decryptFn (lambda (s) (list->string (reverse (string->list s)))))
+
+
+;EN LA PARTE DE FUNCIONES OBLIGATORIAS SE ENCUENTRA UNA SECCION EN LA CUAL SE MUESTRA UN EJEMPLO DE COMO USAR
+;LAS FUNCIONES
 
 
 ;TDA SocialNetwork
@@ -512,6 +511,11 @@ y el nombre del autor se incluyen en el TDA PUBLICACION
                                     (list? (getPost_comments publicacion))
                                  ))
                                 ))
+(define es_publicacionUsuario?(lambda (nombreUsuario)
+                                (lambda(publicacion)
+                                  (eqv? nombreUsuario (getPost_autor publicacion))
+                                  )
+                                ))
 ;------------------------------MODIFICADORES----------------------------------
 
 ;------------------------------OTRAS FUNCIONES----------------------------------
@@ -607,6 +611,13 @@ y el nombre del autor se incluyen en el TDA PUBLICACION
                                       )
                                       (añadir-participante-por-idPost idPost lista-participantes nuevos-participantes)
                                       ))))
+
+
+(define usuarioParticipa?(lambda(nombreUsuario)
+                           (lambda(participacion)
+                             (member? nombreUsuario participacion)
+                             )
+                           ))
 #|
 (define usuarios (list "user1" "user2" "user3"))
 (define a (agregarNuevaParticipacion 4 '() usuarios))
@@ -649,13 +660,16 @@ salida = '((4 "user1" "user2" "user3") (5 "user7" "user8" "user9" "user0" "userA
 #|
 (define follow1(((login login2 "user1" "pass1" follow) (date 30 10 2020))
  "user2"))
-
 |#
 ;
 ;USUARIOS1 SIGUE A USUARIO3 Y USUARIO3 SIGUE A USUARIO2
 ;(define follow2(((login follow1 "user1" "pass1" follow)(date 25 5 2021))"user3"))
 ;(define follow3(((login follow2 "user3" "pass3" follow)(date 15 02 2021))"user2"))
 
+
+;SOCIALNETWORK->STRING
+;(display (socialnetwork->string follow3)
+;(login facebook "user2" "pass2" socialnetwork->string))
 ;-----------------------------------------FUNCION SHARE----------------------------------------------
 ;USANDO LOGIN2
 ;SI ES DIRIGIDO A LOS AMIGOS DE LA PERSONA QUE LOGEA
@@ -952,3 +966,184 @@ recorrido: socialnetwork
                    )
                  )
                ))
+
+
+;--------------------------SOCIALNETWORK->STRING----------------------------------------------------
+
+#|descripcion: funcion que recibe una socialnetwork y entrega
+una representacion del mismo como un string posible de visualizar de forma
+comprensible al usuario
+
+dom: socialnetwork
+recorrido: string
+|#
+;------------------------------------
+
+
+(define socialnetwork->string(lambda(sn)
+                              (if (null? (getUser_sesionIniciada(get_snUsuarios sn)))
+                               (string-append "\nSOCIAL NETWORK:\nNombre: " (get_snName sn)
+                                              "\nFecha de creacion: " (date->string (get_snDate sn))
+                                              "\nencryptFn\n"
+                                              "\ndecryptFn\n"
+                                              "\nLista de usuarios: " (usuarios->string (get_snUsuarios sn)) "\n"
+                                              "\nPublicaciones: " (publicaciones->string (get_snPublicaciones sn) (get_decryptFn sn))
+                                              "\nGente que recibio un post: " (participacionesPost->string (get_snGente_que_participo_en_post sn))
+                                              "\nGente a la que se les compartio un post: " (share->string (get_snPosts_Compartidos sn))
+
+                                "\n"
+
+                                )
+                               (string-append "\nINFORMACION USUARIO\n"
+                                              (usuario->string (getUser_sesionIniciada(get_snUsuarios sn)))"\n"
+                                              "\nPUBLICACIONES\n"
+                                              (publicaciones->string (my-filter (es_publicacionUsuario? (getUser_username(getUser_sesionIniciada(get_snUsuarios sn)))) (get_snPublicaciones sn) ) (get_decryptFn sn) ) "\n"
+                                              "\nPUBLICACIONES QUE PARTICIPA EL USUARIO\n"
+                                              (participacionesPost->string  (my-filter (usuarioParticipa? (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))))  (get_snGente_que_participo_en_post sn))) "\n"
+                                              "\nPUBLICACIONES COMPARTIDAS AL USUARIO\n"
+                                              (share->string (my-filter (usuario-parte-del-share? (getUser_username(getUser_sesionIniciada(get_snUsuarios sn))))  (get_snPosts_Compartidos sn)))
+                                              
+                                              )
+
+
+                               )
+
+  )
+  )
+ 
+
+
+                        
+;----------------------------------SECCION ALGO->STRING-------------------------------
+ (define usuario-parte-del-share?(lambda(nombreUsuario)
+                                   (lambda(shares)
+                                     (member? nombreUsuario shares)
+                                     )
+                                   
+
+   ))
+         
+(define date->string(lambda (fecha)
+  (if(null? fecha)
+     ""
+     (string-append (number->string (getDay fecha)) " / " (number->string (getMonth fecha)) " / " (number->string (getYear fecha)))
+  )))
+
+ 
+
+(define amigos->string (lambda(lista-amigos)
+                         (if(null? lista-amigos)
+                            ""
+                            (string-append " " (car lista-amigos) ", " (amigos->string (cdr lista-amigos)))
+                            )
+                         )
+  )
+
+(define followers->string(lambda(seguidores-usuario)
+                           (if(null? seguidores-usuario)
+                              ""
+                              (string-append "\n  " "[ "(car(cdr(car seguidores-usuario))) ", " (date->string (car (car seguidores-usuario))) "]" (followers->string (cdr seguidores-usuario)))
+                              )
+
+                           ))
+(define usuario->string(lambda(usuario)
+               (if(null? usuario)
+                  ""
+                  (if(eqv? #t (getUser_sesionActiva usuario))
+                     (string-append "\nUsuario: " (getUser_username usuario) "\nSesion Activa" "\nID Usuario: "
+                                    (number->string (getUser_idUser usuario)) "\nFecha creacion usuario: "
+                                    (date->string (getUser_date usuario)) "\nLista de amigos: " (amigos->string (getUser_amigos usuario))
+                                    "\nSeguidores del usuario: " (followers->string (getUser_followers usuario))
+                                    )
+
+                     (string-append "\nUsuario: " (getUser_username usuario) "\nSesion Inactiva" "\nID Usuario: "
+                                    (number->string (getUser_idUser usuario)) "\nFecha creacion usuario: "
+                                    (date->string (getUser_date usuario)) "\nLista de amigos: " (amigos->string (getUser_amigos usuario))
+                                    "\nSeguidores del usuario: " (followers->string (getUser_followers usuario))
+                                    )
+                    
+                     )
+                  )
+
+                         ))
+(define usuarios->string(lambda(lista-usuarios)
+                          (if(null? lista-usuarios)
+                             ""
+                             (string-append "\n" (usuario->string (car lista-usuarios)) (usuarios->string (cdr lista-usuarios)))
+
+                             )
+
+                          ))
+
+(define publicacion->string (lambda(publicacion funcionDecrypt)
+                              (string-append "\nAutor del post: " (getPost_autor publicacion) "\nID Post: " (number->string (getPost_id publicacion))
+                              "\nFecha creacion del post: " (date->string (getPost_date publicacion)) "\nContenido post: "
+                              (funcionDecrypt (getPost_contenido publicacion)) 
+                              )
+
+                              ))
+
+(define publicaciones->string(lambda(lista-publicaciones funcionDecrypt)
+                               (if(null? lista-publicaciones)
+                                  ""
+                                  (string-append "\n" (publicacion->string (car lista-publicaciones) funcionDecrypt) (publicaciones->string (cdr lista-publicaciones) funcionDecrypt))
+                                  )
+                               ))
+
+(define participacion-en-post->string(lambda(postParticipado)
+                               (if(null? postParticipado)
+                                  ""
+                                  (string-append "\nIDpost que se publico en el muro de los usuarios: " (number->string(car postParticipado))
+                                   "\nUsuarios que tienen la publicacion escrita en su muro: " (amigos->string (cdr postParticipado)))
+                                  )
+
+                               ))
+(define participacionesPost->string (lambda(lista-participaciones)
+                                      (if(null? lista-participaciones)
+                                         ""
+                                         (string-append "\n" (participacion-en-post->string (car lista-participaciones)) (participacionesPost->string (cdr lista-participaciones)) )
+
+                                         )
+                                      ))
+
+(define postShare->string(lambda(publicacion-compartida)
+                           (if(null? publicacion-compartida)
+                              ""
+                              (string-append "\nSe ha compartido el post: " (number->string (car publicacion-compartida))
+                                             "\nEl dia: " (date->string (cadr publicacion-compartida))
+                                             "\nPersonas que se les compartio el post: " (amigos->string (caddr publicacion-compartida))
+                                             )
+                              )
+
+                           ))
+(define share->string(lambda(lista-publicacionesCompartidas)
+                       (if(null? lista-publicacionesCompartidas)
+                          ""
+                          (string-append "\n" (postShare->string (car lista-publicacionesCompartidas)) (share->string (cdr lista-publicacionesCompartidas)))
+                          )
+
+                       ))
+;-------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       
